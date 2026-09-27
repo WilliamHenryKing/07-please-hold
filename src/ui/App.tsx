@@ -2,7 +2,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useRef, useSyncExternalStore } from "react";
 import { EndCard } from "./EndCard";
-import { ActionPad, type Controls, HintBar, RestartButton, TaskCard } from "./Hud";
+import { ActionPad, type Controls, HintBar, MuteButton, RestartButton, TaskCard } from "./Hud";
 import type { HudStore } from "./store";
 
 /** Room title that floats past whenever a new room begins. */
@@ -53,7 +53,10 @@ export function App({
       <h1 className="sr-only">PLEASE HOLD: a tiny zero-gravity workplace comedy</h1>
       <div className="flex items-start justify-between gap-2">
         <TaskCard hud={hud} />
-        <RestartButton hud={hud} onRestart={controls.restart} />
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-start">
+          <RestartButton hud={hud} onRestart={controls.restart} />
+          <MuteButton hud={hud} onToggle={controls.toggleMute} />
+        </div>
       </div>
       <RoomBanner index={hud.roomIndex} name={hud.roomName} reduced={reduced} />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

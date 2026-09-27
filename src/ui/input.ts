@@ -9,6 +9,7 @@ export interface InputHandlers {
   grab: () => void;
   push: () => void;
   restart: () => void;
+  toggleMute: () => void;
   setMode: (mode: InputMode) => void;
 }
 
@@ -25,7 +26,8 @@ const AIM_KEYS: Record<string, Vec> = {
 
 /**
  * Pointer: hover (or drag on touch) to aim, release to act, right-click to grab.
- * Keys: arrows/WASD aim (combine for diagonals), Space acts, E grabs, Q pushes off carrying, R restarts.
+ * Keys: arrows/WASD aim (combine for diagonals), Space acts, E grabs, Q pushes off carrying,
+ * R restarts, M mutes.
  */
 export function bindInput(canvas: HTMLCanvasElement, h: InputHandlers) {
   const held = new Set<string>();
@@ -76,6 +78,7 @@ export function bindInput(canvas: HTMLCanvasElement, h: InputHandlers) {
     } else if (e.code === "KeyE") h.grab();
     else if (e.code === "KeyQ") h.push();
     else if (e.code === "KeyR") h.restart();
+    else if (e.code === "KeyM") h.toggleMute();
     else return;
     h.setMode("pointer");
   };

@@ -7,6 +7,7 @@ export interface Controls {
   push: () => void;
   restart: () => void;
   replay: () => void;
+  toggleMute: () => void;
 }
 
 const PRIMARY_LABEL: Record<Action, string> = {
@@ -76,6 +77,21 @@ export function RestartButton({ hud, onRestart }: { hud: HudSnapshot; onRestart:
     >
       ↺ Restart
       <Key k="R" show={hud.mode === "pointer"} />
+    </button>
+  );
+}
+
+export function MuteButton({ hud, onToggle }: { hud: HudSnapshot; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={hud.muted}
+      aria-label={hud.muted ? "Sound off. Turn sound on (M)" : "Sound on. Mute (M)"}
+      className={`${btn} pointer-events-auto px-3 py-2 text-sm`}
+    >
+      <span aria-hidden="true">{hud.muted ? "🔇" : "🔊"}</span>
+      <Key k="M" show={hud.mode === "pointer"} />
     </button>
   );
 }

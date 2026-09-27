@@ -17,10 +17,11 @@ export interface HudSnapshot {
   hatchOpen: boolean;
   finished: boolean;
   mode: InputMode;
+  muted: boolean;
   result: { stats: Stats; evaluation: Evaluation } | null;
 }
 
-export function snapshot(state: GameState, mode: InputMode): HudSnapshot {
+export function snapshot(state: GameState, mode: InputMode, muted = false): HudSnapshot {
   const finished = state.phase === "done";
   return {
     roomIndex: state.roomIndex,
@@ -34,6 +35,7 @@ export function snapshot(state: GameState, mode: InputMode): HudSnapshot {
     hatchOpen: state.hatchOpen,
     finished,
     mode,
+    muted,
     result: finished ? { stats: { ...state.stats }, evaluation: evaluate(state.stats) } : null,
   };
 }

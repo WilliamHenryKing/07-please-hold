@@ -1,5 +1,7 @@
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import { cueFor } from "./audio/cues";
+import { AudioEngine } from "./audio/engine";
 import { aimAlong, aimAt, grab, primary, pushOff, restartRoom } from "./game/actions";
 import type { InputMode } from "./game/hints";
 import { createGame } from "./game/state";
@@ -22,7 +24,7 @@ canvas.tabIndex = 0;
 canvas.setAttribute("role", "application");
 canvas.setAttribute(
   "aria-label",
-  "Orbital lounge. Aim with the pointer or arrow keys; click, tap or Space to throw or push off; E to grab a rail or item; Q to push off carrying; R to restart the room.",
+  "Orbital lounge. Aim with the pointer or arrow keys; click, tap or Space to throw or push off; E to grab a rail or item; Q to push off carrying; R to restart the room; M to mute.",
 );
 document.body.prepend(canvas);
 
@@ -40,15 +42,32 @@ const layout = () => {
 };
 window.addEventListener("resize", layout);
 
-const store = new HudStore(snapshot(state, mode));
+// Sound starts on the first gesture (browsers require it); samples load right after.
+const audio = new AudioEngine();
+const unlock = () => audio.unlock();
+window.addEventListener("pointerdown", unlock, { capture: true });
+window.addEventListener("keydown", unlock, { capture: true });
+document.addEventListener("visibilitychange", () => audio.setHidden(document.hidden));
+let cueSeed = 0;
+
+const store = new HudStore(snapshot(state, mode, audio.muted));
 const controls = {
   primary: () => primary(state),
   grab: () => grab(state),
   push: () => pushOff(state),
-  restart: () => restartRoom(state),
+  restart: () => {
+    if (state.phase !== "playing") return;
+    audio.play({ sound: "restart", gain: 0.6, rate: 1, pan: 0 });
+    restartRoom(state);
+  },
   replay: () => {
     state = createGame();
     canvas.focus();
+  },
+  toggleMute: () => {
+    audio.unlock();
+    audio.toggleMute();
+    audio.play({ sound: "toggle", gain: 0.5, rate: 1, pan: 0 });
   },
 };
 
@@ -75,9 +94,15 @@ function frame(now: number) {
   last = now;
   input.poll();
   carry = advance(state, carry + dt);
-  view.handle(drainEvents(state), state);
+  const events = drainEvents(state);
+  view.handle(events, state);
+  for (const e of events) {
+    const cue = cueFor(e, state, cueSeed++);
+    if (cue) audio.play(cue);
+  }
+  audio.setRevolving(!!state.room.spinner && state.phase === "playing");
   view.update(state, dt);
-  store.publish(snapshot(state, mode));
+  store.publish(snapshot(state, mode, audio.muted));
   if (first) {
     first = false;
     layout();

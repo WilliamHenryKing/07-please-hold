@@ -49,10 +49,14 @@ const panel: Build = (seed) => {
   let body = box(w, h, 0.12, 0.05, fabric);
   const cols = 2 + Math.floor(r() * 3);
   const rows = 2 + Math.floor(r() * 3);
-  for (let i = 1; i < cols; i++) for (let j = 1; j < rows; j++) body = carve(0.03, body, move(sphere(0.025), [-w / 2 + (i * w) / cols, -h / 2 + (j * h) / rows, 0.07]));
+  // Quilting: each cell puffs out between deep button tufts.
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++)
+      body = blend(0.04, body, move(ellipsoid((w / cols) * 0.46, (h / rows) * 0.46, 0.05, fabric), [-w / 2 + ((i + 0.5) * w) / cols, -h / 2 + ((j + 0.5) * h) / rows, 0.045]));
+  for (let i = 1; i < cols; i++) for (let j = 1; j < rows; j++) body = carve(0.035, body, move(sphere(0.04), [-w / 2 + (i * w) / cols, -h / 2 + (j * h) / rows, 0.11]));
   const button = mat(0x6a5a4a, 0.5);
   const buttons: Node[] = [];
-  for (let i = 1; i < cols; i++) for (let j = 1; j < rows; j++) buttons.push(move(sphere(0.012, button), [-w / 2 + (i * w) / cols, -h / 2 + (j * h) / rows, 0.045]));
+  for (let i = 1; i < cols; i++) for (let j = 1; j < rows; j++) buttons.push(move(sphere(0.014, button), [-w / 2 + (i * w) / cols, -h / 2 + (j * h) / rows, 0.075]));
   return union(displace(body, 0.004, 10, 3, seed), ...buttons, move(box(w + 0.04, h + 0.04, 0.03, 0.01, mat(0xb8bcc2, 0.35, 0.8)), [0, 0, -0.07]));
 };
 const rail: Build = (seed) => {

@@ -16,13 +16,15 @@ const PRIMARY_LABEL: Record<Action, string> = {
   none: "Drifting…",
 };
 
-const btn =
-  "rounded-2xl border-2 border-[#3a2a22]/15 bg-[#f4ead8] px-4 py-3 font-semibold text-[#3a2a22] shadow-[0_4px_0_rgba(58,42,34,0.25)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-45 disabled:shadow-none";
+const base =
+  "rounded-2xl border-2 border-[#3a2a22]/15 px-4 py-3 font-semibold shadow-[0_4px_0_rgba(58,42,34,0.25)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-45 disabled:shadow-none";
+const btn = `${base} bg-[#f4ead8] text-[#3a2a22]`;
+const hot = `${base} bg-[#8c3b3b] text-[#fff4dc]`;
 
 function Key({ k, show }: { k: string; show: boolean }) {
   if (!show) return null;
   return (
-    <kbd className="ml-2 rounded-md bg-[#3a2a22]/10 px-1.5 py-0.5 font-mono text-xs text-[#3a2a22]/75">
+    <kbd className="ml-2 rounded-md bg-current/10 px-1.5 py-0.5 font-mono text-xs opacity-75">
       {k}
     </kbd>
   );
@@ -119,7 +121,7 @@ export function ActionPad({ hud, controls }: { hud: HudSnapshot; controls: Contr
       </button>
       <button
         type="button"
-        className={`${btn} min-w-[7.5rem] bg-[#8c3b3b] text-[#fff4dc]`}
+        className={`${hot} min-w-[7.5rem]`}
         onClick={controls.primary}
         disabled={hud.primary === "none"}
         aria-label={`${PRIMARY_LABEL[hud.primary]} toward your aim (Space)`}

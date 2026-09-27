@@ -37,7 +37,7 @@ const fragment = /* glsl */ `
   void main() {
     vec2 p = uOffset + (vUv - 0.5) * uScale;
     // Space: deep blue with sparse stars that drift very slowly.
-    vec2 sp = p * 40.0 + vec2(uTime * 0.05, 0.0);
+    vec2 sp = p * 40.0 * max(1.0, uScale * 0.5) + vec2(uTime * 0.05, 0.0);
     float star = step(0.992, hash(floor(sp))) * (0.6 + 0.4 * sin(uTime * 1.5 + hash(floor(sp)) * 6.28));
     vec3 col = vec3(0.04, 0.05, 0.11) + star * vec3(1.0, 0.95, 0.85);
 

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { RoomDef, Vec } from "../game/types";
 import { PAL } from "./palette";
+import { skyMaterial } from "./planet";
 
 const FOV = 30;
 
@@ -30,6 +31,13 @@ export class Stage {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene.background = new THREE.Color(PAL.space);
+    // Outside the hull: the same planet the portholes show, filling any spare screen.
+    const sky = new THREE.Mesh(
+      new THREE.PlaneGeometry(220, 220),
+      skyMaterial(new THREE.Vector2(-0.4, 1.1), 16),
+    );
+    sky.position.z = -45;
+    this.scene.add(sky);
 
     const hemi = new THREE.HemisphereLight(0xfff0dc, 0x6a7090, 1.4);
     this.scene.add(hemi);

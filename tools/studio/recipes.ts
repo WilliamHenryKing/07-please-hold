@@ -100,9 +100,9 @@ const floatProp: Build = (seed, index) => {
 export const project = { id: "07-please-hold", name: "PLEASE HOLD", background: 0x2c3140 };
 export const families: Recipes["families"] = [
   { id: "padded-panel", count: 24, voxel: 0.006, keep: 0.25, build: panel },
-  { id: "handrail", count: 16, voxel: 0.004, keep: 0.3, build: rail },
+  { id: "handrail", count: 24, voxel: 0.004, keep: 0.3, build: rail },
   { id: "hatch", count: 8, voxel: 0.006, keep: 0.3, hero: true, build: hatch },
-  { id: "floating-prop", count: 36, voxel: 0.0025, keep: 0.3, build: floatProp },
+  { id: "floating-prop", count: 72, voxel: 0.0025, keep: 0.3, build: floatProp },
 ];
 export const textures: Recipes["textures"] = [
   { id: "quilted-fabric", ramp: [0xb8a896, 0xe8d9c4, 0xf2e6d6], layers: [{ kind: "weave", count: 96, weight: 0.5 }, { kind: "cells", count: 6, weight: 0.8 }], roughness: [0.85, 1], normal: 1.8 },

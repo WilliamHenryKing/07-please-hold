@@ -1,0 +1,205 @@
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import type { RoomDef } from "../game/types";
+import { mat, PAL } from "./palette";
+import { skyMaterial } from "./planet";
+
+export const BACK_Z = -1.1;
+const FRONT_Z = 0.9;
+const DEPTH = FRONT_Z - BACK_Z;
+
+export interface Porthole {
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** View-only dressing per room: rounded windows onto the planet and soft wall lamps. */
+export const DRESSING: Record<string, { windows: Porthole[]; lamps: [number, number][] }> = {
+  arrival: {
+    windows: [{ x: 0.4, y: 0.5, r: 1.7 }],
+    lamps: [
+      [-3.6, 2.6],
+      [3.2, 2.6],
+    ],
+  },
+  conservatory: {
+    windows: [
+      { x: -2.6, y: 0.2, r: 1.2 },
+      { x: 2.6, y: 0.6, r: 1.3 },
+    ],
+    lamps: [[-5, 2.8]],
+  },
+  galley: {
+    windows: [
+      { x: -4.2, y: 1.8, r: 0.9 },
+      { x: 4.2, y: 0.4, r: 1.1 },
+    ],
+    lamps: [
+      [-5.8, -1.8],
+      [0, 3.4],
+    ],
+  },
+};
+
+const panelGeo = new RoundedBoxGeometry(1, 1, 0.24, 3, 0.1);
+const tuftGeo = new THREE.SphereGeometry(0.045, 8, 6);
+
+function instanced(geo: THREE.BufferGeometry, material: THREE.Material, n: number) {
+  const mesh = new THREE.InstancedMesh(geo, material, n);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+/** The padded back wall, broken around the portholes. */
+function backWall(room: RoomDef, windows: Porthole[], group: THREE.Group) {
+  const cols = Math.round(room.width / 1.5);
+  const rows = Math.round(room.height / 1.35);
+  const cw = room.width / cols;
+  const ch = room.height / rows;
+  const cells: { x: number; y: number }[] = [];
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++) {
+      const x = -room.width / 2 + (i + 0.5) * cw;
+      const y = -room.height / 2 + (j + 0.5) * ch;
+      const blocked = windows.some((w) => Math.hypot(x - w.x, y - w.y) < w.r + 0.45);
+      if (!blocked) cells.push({ x, y });
+    }
+  const panels = instanced(
+    panelGeo,
+    new THREE.MeshStandardMaterial({ roughness: 0.92 }),
+    cells.length,
+  );
+  const tufts = instanced(tuftGeo, mat(PAL.button, 0.6), cells.length * 4);
+  const m = new THREE.Matrix4();
+  const c = new THREE.Color();
+  cells.forEach((cell, n) => {
+    m.compose(
+      new THREE.Vector3(cell.x, cell.y, BACK_Z),
+      new THREE.Quaternion(),
+      new THREE.Vector3(cw - 0.08, ch - 0.08, 1),
+    );
+    panels.setMatrixAt(n, m);
+    const accent = (n * 7) % 11 === 0;
+    const list = accent ? PAL.panelAccent : PAL.panels;
+    panels.setColorAt(n, c.setHex(list[(n * 5) % list.length] ?? PAL.panels[0]));
+    for (let k = 0; k < 4; k++) {
+      const tx = cell.x + (k % 2 ? 0.22 : -0.22) * cw;
+      const ty = cell.y + (k < 2 ? 0.22 : -0.22) * ch;
+      m.makeTranslation(tx, ty, BACK_Z + 0.115);
+      tufts.setMatrixAt(n * 4 + k, m);
+    }
+  });
+  // The back wall sits behind everything; it receives shadows so the key light reads depth.
+  group.add(panels, tufts);
+  // A dark hull plane behind the wall fills the gaps around portholes.
+  const hull = new THREE.Mesh(
+    new THREE.PlaneGeometry(room.width + 1, room.height + 1),
+    mat(PAL.hull, 1),
+  );
+  hull.position.z = BACK_Z - 0.14;
+  group.add(hull);
+}
+
+function portholes(windows: Porthole[], group: THREE.Group) {
+  for (const w of windows) {
+    const glass = new THREE.Mesh(
+      new THREE.CircleGeometry(w.r, 48),
+      skyMaterial(new THREE.Vector2(w.x * 0.25, w.y * 0.25), w.r * 0.5),
+    );
+    glass.position.set(w.x, w.y, BACK_Z - 0.05);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(w.r + 0.06, 0.12, 12, 48),
+      mat(PAL.trim, 0.35, 0.7),
+    );
+    rim.position.set(w.x, w.y, BACK_Z + 0.02);
+    const pad = new THREE.Mesh(
+      new THREE.TorusGeometry(w.r + 0.3, 0.16, 10, 48),
+      mat(PAL.panels[1], 0.9),
+    );
+    pad.position.set(w.x, w.y, BACK_Z - 0.02);
+    pad.receiveShadow = true;
+    group.add(glass, rim, pad);
+  }
+}
+
+/** Padded floor, ceiling and side walls running toward the camera. */
+function frame(room: RoomDef, group: THREE.Group) {
+  const hw = room.width / 2;
+  const hh = room.height / 2;
+  const t = 0.5;
+  const segs: { x: number; y: number; w: number; h: number }[] = [];
+  const along = Math.round(room.width / 1.5);
+  for (let i = 0; i < along; i++) {
+    const x = -hw + ((i + 0.5) * room.width) / along;
+    const w = room.width / along - 0.06;
+    segs.push({ x, y: -hh - t / 2, w, h: t }, { x, y: hh + t / 2, w, h: t });
+  }
+  const up = Math.round(room.height / 1.5);
+  for (let j = 0; j < up; j++) {
+    const y = -hh + ((j + 0.5) * room.height) / up;
+    const h = room.height / up - 0.06;
+    segs.push({ x: -hw - t / 2, y, w: t, h }, { x: hw + t / 2, y, w: t, h });
+  }
+  const pads = instanced(panelGeo, mat(PAL.panels[2], 0.9), segs.length);
+  const m = new THREE.Matrix4();
+  segs.forEach((s, n) => {
+    m.compose(
+      new THREE.Vector3(s.x, s.y, (BACK_Z + FRONT_Z) / 2),
+      new THREE.Quaternion(),
+      new THREE.Vector3(s.w, s.h, DEPTH / 0.24),
+    );
+    pads.setMatrixAt(n, m);
+  });
+  group.add(pads);
+  // Brass trim where the padding meets the front edge.
+  const trimMat = mat(PAL.brass, 0.35, 0.8);
+  const outline = [
+    [-hw - t, -hh - t, hw + t, -hh - t],
+    [-hw - t, hh + t, hw + t, hh + t],
+    [-hw - t, -hh - t, -hw - t, hh + t],
+    [hw + t, -hh - t, hw + t, hh + t],
+  ];
+  for (const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] of outline) {
+    const l = Math.hypot(x2 - x1, y2 - y1);
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, l, 8), trimMat);
+    bar.position.set((x1 + x2) / 2, (y1 + y2) / 2, FRONT_Z);
+    if (y1 === y2) bar.rotation.z = Math.PI / 2;
+    group.add(bar);
+  }
+}
+
+function lamps(list: [number, number][], group: THREE.Group) {
+  const shade = mat(PAL.lampGlow, 0.4, 0, 1.6);
+  for (const [x, y] of list) {
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      shade,
+    );
+    bulb.rotation.x = Math.PI / 2;
+    bulb.position.set(x, y, BACK_Z + 0.12);
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.06, 20),
+      mat(PAL.brass, 0.35, 0.8),
+    );
+    base.rotation.x = Math.PI / 2;
+    base.position.set(x, y, BACK_Z + 0.12);
+    group.add(bulb, base);
+  }
+  const first = list[0];
+  if (first) {
+    const glow = new THREE.PointLight(PAL.lampGlow, 6, 9, 1.6);
+    glow.position.set(first[0], first[1], 0.2);
+    group.add(glow);
+  }
+}
+
+export function buildShell(room: RoomDef): THREE.Group {
+  const group = new THREE.Group();
+  const dress = DRESSING[room.id] ?? { windows: [], lamps: [] };
+  backWall(room, dress.windows, group);
+  portholes(dress.windows, group);
+  frame(room, group);
+  lamps(dress.lamps, group);
+  return group;
+}

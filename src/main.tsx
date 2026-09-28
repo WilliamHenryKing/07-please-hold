@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { cueFor } from "./audio/cues";
 import { AudioEngine } from "./audio/engine";
-import { aimAlong, aimAt, grab, primary, pushOff, restartRoom } from "./game/actions";
+import { aimAlong, aimAt, canGrab, grab, primary, pushOff, restartRoom } from "./game/actions";
 import type { InputMode } from "./game/hints";
 import { createGame } from "./game/state";
 import { advance, drainEvents } from "./game/step";
@@ -126,5 +126,17 @@ function frame(now: number) {
 }
 layout();
 requestAnimationFrame(frame);
+
+// Read-only probe for the end-to-end test (only with ?e2e in the URL). Input still goes
+// through the real pointer and keyboard.
+if (new URLSearchParams(window.location.search).has("e2e")) {
+  Object.assign(window, {
+    __hold: {
+      state: () => state,
+      canGrab: () => canGrab(state),
+      toScreen: (x: number, y: number) => view.stage.toScreen({ x, y }),
+    },
+  });
+}
 
 if (import.meta.hot) import.meta.hot.dispose(() => input.dispose());

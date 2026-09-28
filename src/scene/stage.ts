@@ -140,6 +140,16 @@ export class Stage {
     return this.raycaster.ray.intersectPlane(this.plane, hit) ? { x: hit.x, y: hit.y } : null;
   }
 
+  /** Project a play-plane point to client pixels. */
+  toScreen(p: Vec): { x: number; y: number } {
+    const v = new THREE.Vector3(p.x, p.y, 0).project(this.camera);
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((v.x + 1) / 2) * rect.width,
+      y: rect.top + ((1 - v.y) / 2) * rect.height,
+    };
+  }
+
   render() {
     this.renderer.render(this.scene, this.camera);
   }

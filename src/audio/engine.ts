@@ -140,6 +140,50 @@ export class AudioEngine {
     g.setTargetAtTime(LEVELS.music, t + seconds, 0.6);
   }
 
+  /**
+   * Finale: the hold music fades out, the line rings twice (synthesised two-tone ring),
+   * then the call connects with the closing jingle.
+   */
+  finale() {
+    const ctx = this.ctx;
+    if (!ctx || !this.music || !this.sfx) return;
+    const t = ctx.currentTime;
+    this.music.gain.cancelScheduledValues(t);
+    this.music.gain.setTargetAtTime(0, t, 0.4);
+    for (const start of [0.6, 1.8]) {
+      for (const offset of [0, 0.45]) this.ring(t + start + offset, 0.35);
+    }
+    window.setTimeout(() => {
+      this.play({ sound: "done", gain: 0.8, rate: 1, pan: 0 });
+    }, 3000);
+  }
+
+  private ring(at: number, length: number) {
+    const ctx = this.ctx;
+    if (!ctx || !this.sfx) return;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(0.12, at + 0.02);
+    g.gain.setValueAtTime(0.12, at + length - 0.03);
+    g.gain.linearRampToValueAtTime(0, at + length);
+    g.connect(this.sfx);
+    for (const f of [400, 450]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      o.connect(g);
+      o.start(at);
+      o.stop(at + length);
+    }
+  }
+
+  /** Bring the hold music back (a new shift). */
+  resumeMusic() {
+    const ctx = this.ctx;
+    if (!ctx || !this.music) return;
+    this.music.gain.cancelScheduledValues(ctx.currentTime);
+    this.music.gain.setTargetAtTime(LEVELS.music, ctx.currentTime, 1);
+  }
+
   /** The revolving compartment hums only in the room that has one. */
   setRevolving(on: boolean) {
     const ctx = this.ctx;

@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { useRef, useSyncExternalStore } from "react";
 import { EndCard } from "./EndCard";
 import { ActionPad, type Controls, HintBar, MuteButton, RestartButton, TaskCard } from "./Hud";
+import { RoomCard } from "./RoomCard";
 import type { HudStore } from "./store";
 
 /** Room title that floats past whenever a new room begins. */
@@ -60,7 +61,14 @@ export function App({
       </div>
       <RoomBanner index={hud.roomIndex} name={hud.roomName} reduced={reduced} />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="sm:flex-1">
+        <div className="flex flex-col gap-2 sm:flex-1">
+          {hud.roomCard && (
+            <RoomCard
+              key={`${hud.roomIndex}-${hud.roomCard.result.roomId}`}
+              card={hud.roomCard}
+              reduced={reduced}
+            />
+          )}
           <HintBar hint={hud.finished ? null : hud.hint} />
         </div>
         {!hud.finished && <ActionPad hud={hud} controls={controls} />}

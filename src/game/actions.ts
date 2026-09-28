@@ -150,5 +150,7 @@ export function grab(state: GameState): boolean {
 export function restartRoom(state: GameState) {
   if (state.phase !== "playing") return;
   state.stats.restarts++;
+  // A tidied room that is restarted gets scored again on its next finish.
+  if (state.results.at(-1)?.roomId === state.room.id) state.results.pop();
   loadRoom(state, state.roomIndex);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { throwHeld } from "../src/game/actions";
+import { restartRoom, throwHeld } from "../src/game/actions";
 import { ROOMS } from "../src/game/rooms";
 import {
   isBetter,
@@ -58,6 +58,8 @@ describe("room scoring", () => {
     expect(g.results[0]?.moves).toBe(2);
     expect(g.results[0]?.time).toBeCloseTo(12, 1);
     expect(g.results[0]?.stars).toBe(3);
+    restartRoom(g);
+    expect(g.results).toHaveLength(0);
   });
 
   test("records keep the best run and survive bad storage", () => {

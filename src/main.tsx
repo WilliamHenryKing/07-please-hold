@@ -10,6 +10,7 @@ import { worldReady } from "./loader";
 import { GameView } from "./scene/view";
 import { App } from "./ui/App";
 import { bindInput } from "./ui/input";
+import { loadRecords, saveResults } from "./ui/records";
 import { HudStore, snapshot } from "./ui/store";
 
 const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -49,8 +50,10 @@ window.addEventListener("pointerdown", unlock, { capture: true });
 window.addEventListener("keydown", unlock, { capture: true });
 document.addEventListener("visibilitychange", () => audio.setHidden(document.hidden));
 let cueSeed = 0;
+let records = loadRecords();
+let savedResults = 0;
 
-const store = new HudStore(snapshot(state, mode, audio.muted));
+const store = new HudStore(snapshot(state, mode, audio.muted, records));
 const controls = {
   primary: () => primary(state),
   grab: () => grab(state),
@@ -62,6 +65,8 @@ const controls = {
   },
   replay: () => {
     state = createGame();
+    savedResults = 0;
+    audio.resumeMusic();
     canvas.focus();
   },
   toggleMute: () => {
@@ -97,12 +102,21 @@ function frame(now: number) {
   const events = drainEvents(state);
   view.handle(events, state);
   for (const e of events) {
+    if (e.type === "done") {
+      audio.finale();
+      continue;
+    }
     const cue = cueFor(e, state, cueSeed++);
     if (cue) audio.play(cue);
   }
+  savedResults = Math.min(savedResults, state.results.length);
+  if (state.results.length > savedResults) {
+    records = saveResults(records, state.results.slice(savedResults));
+    savedResults = state.results.length;
+  }
   audio.setRevolving(!!state.room.spinner && state.phase === "playing");
   view.update(state, dt);
-  store.publish(snapshot(state, mode, audio.muted));
+  store.publish(snapshot(state, mode, audio.muted, records));
   if (first) {
     first = false;
     layout();

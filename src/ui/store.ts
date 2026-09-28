@@ -2,6 +2,7 @@ import { type Action, canGrab, canPushWithItem, primaryAction } from "../game/ac
 import { type Evaluation, evaluate } from "../game/evaluation";
 import { hintFor, type InputMode } from "../game/hints";
 import { ROOMS } from "../game/rooms";
+import type { Records, RoomResult } from "../game/scoring";
 import type { GameState, Stats } from "../game/types";
 
 /** What the HUD shows. Rebuilt every frame, but React only re-renders when it changes. */
@@ -18,11 +19,30 @@ export interface HudSnapshot {
   finished: boolean;
   mode: InputMode;
   muted: boolean;
-  result: { stats: Stats; evaluation: Evaluation } | null;
+  /** The room just tidied, shown while the hatch is open. */
+  roomCard: { name: string; result: RoomResult; best: RoomResult | null } | null;
+  result: {
+    stats: Stats;
+    evaluation: Evaluation;
+    rooms: { name: string; result: RoomResult; best: RoomResult | null }[];
+  } | null;
 }
 
-export function snapshot(state: GameState, mode: InputMode, muted = false): HudSnapshot {
+const roomName = (id: string) => ROOMS.find((r) => r.id === id)?.name ?? id;
+
+export function snapshot(
+  state: GameState,
+  mode: InputMode,
+  muted = false,
+  records: Records = {},
+): HudSnapshot {
   const finished = state.phase === "done";
+  const withBest = (r: RoomResult) => ({
+    name: roomName(r.roomId),
+    result: r,
+    best: records[r.roomId] ?? null,
+  });
+  const last = state.results.at(-1);
   return {
     roomIndex: state.roomIndex,
     roomCount: ROOMS.length,
@@ -36,7 +56,14 @@ export function snapshot(state: GameState, mode: InputMode, muted = false): HudS
     finished,
     mode,
     muted,
-    result: finished ? { stats: { ...state.stats }, evaluation: evaluate(state.stats) } : null,
+    roomCard: state.hatchOpen && last ? withBest(last) : null,
+    result: finished
+      ? {
+          stats: { ...state.stats },
+          evaluation: evaluate(state.stats),
+          rooms: state.results.map(withBest),
+        }
+      : null,
   };
 }
 

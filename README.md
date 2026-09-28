@@ -38,7 +38,7 @@ Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp,
 
 - **One honest physics rule.** Throws, push-offs, catches and bonks all conserve momentum, so every move is predictable and every mistake is funny.
 - **Three compact rooms, five tasks, one finale.** Each room is scored 1–3 stars on moves and time against par. Your bests stay in this browser. After room 3 the hold music fades, the line rings, and your shift is reviewed.
-- **Warm orbital domesticity.** Quilted panels that dent when you bounce off them, brass rails, soft lamp pools, drifting dust, and a porthole onto a huge planet that shifts with parallax.
+- **Warm orbital domesticity.** Tufted leather panels with stitched seams that dent when you bounce off them, brushed-brass rails that reflect the room, real lamp light, drifting dust, and portholes onto NASA's Earth with an atmosphere rim.
 - **A camera that never makes you seasick.** It is fixed and gently tilted. On a portrait phone the room turns a quarter to fill the screen, because in orbit there is no "up".
 - **Feel.** The attendant squashes along the hit, thrown things tumble, there is a faint drift trail, and hard bumps give a tiny camera nudge. All of it is toned down under `prefers-reduced-motion`.
 - **Sound design.** CC0 elevator music on hold, padded thumps, brass clinks, a pizzicato jingle per task, station hum, a synthesised phone ring, and a mute that remembers.
@@ -59,10 +59,11 @@ Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp,
 
 ## Built with
 
-Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. Every model, texture and the planet is authored procedurally in code.
+Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. Geometry is modelled in code; surfaces use sourced CC0 scans (tufted leather, brushed brass, bouclé, linen), and the planet is NASA imagery.
 
 Notable techniques:
 
+- **One lighting model.** An HDR half-float pipeline (GTAO, bloom above an HDR threshold, AgX applied once in OutputPass, SMAA). A real lounge HDRI is the only ambient light, every glowing lamp is a real light, and a lighter tier keeps phones smooth.
 - **Shared-momentum movement on a fixed 120 Hz step.** `src/game/` is pure TypeScript with no DOM: impulses, restitution, a revolving bar with surface velocity, and trajectory previews. It is covered by unit tests.
 - **The portrait camera.** Framing solves for the room's long side against the HUD's safe band, turning the view a quarter on tall screens. Keyboard aiming is remapped so "up" is always screen-up.
 - **An event-driven presentation layer.** The simulation emits events (throw, grab, bump, place), and the renderer, the audio mixer and the HUD each react to them independently. That keeps effects, sound and the React HUD out of the rules.
@@ -78,7 +79,22 @@ bun run e2e      # optional: Playwright plays room 1 headless
 
 ## Credits
 
-Design and code for the portfolio collection. All visuals are procedural; the finale's phone ring is synthesised with Web Audio; text uses the system font stack.
+Design and code for the portfolio collection. Geometry is modelled in code; the finale's phone ring is synthesised with Web Audio; text uses the system font stack. Every shipped asset is listed with its source, licence and sha256 in [`assets.manifest.json`](assets.manifest.json). Shipped assets total about 5.5 MB.
+
+### Visual assets
+
+| Files in `public/textures/` | Use | Source | Author | Licence |
+| --- | --- | --- | --- | --- |
+| `upholstery/*` (baked from Leather 037 plus a procedural tuft field) | Quilted panels, pads, buttons | [ambientCG Leather037](https://ambientcg.com/view?id=Leather037) | ambientCG | CC0 |
+| `brass/*` (from Metal 054 A) | Brass rails and trims, steel rims | [ambientCG Metal054A](https://ambientcg.com/view?id=Metal054A) | ambientCG | CC0 |
+| `fabric/wool_boucle_*` | Sofa, guest seat, cushion | [Poly Haven Wool Boucle](https://polyhaven.com/a/wool_boucle) (via ODD TIDE) | Poly Haven | CC0 |
+| `cloth/rough_linen_*` | Uniforms, lamp shade | [Poly Haven Rough Linen](https://polyhaven.com/a/rough_linen) (via ODD TIDE) | Poly Haven | CC0 |
+| `env/anniversary_lounge_1k.hdr` | Image-based light and reflections | [Poly Haven Anniversary Lounge](https://polyhaven.com/a/anniversary_lounge) | Greg Zaal | CC0 |
+| `planet/earth_day_2k.webp` | Earth, day side | [NASA Blue Marble Next Generation](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation-w-topography-and-bathymetry) | NASA Earth Observatory | Public domain |
+| `planet/earth_clouds_2k.webp` | Cloud cover | [NASA Blue Marble: Clouds](https://visibleearth.nasa.gov/images/57747/blue-marble-clouds) | NASA Visible Earth | Public domain |
+| `planet/earth_night_2k.webp` | City lights on the night side | [NASA Black Marble 2016](https://visibleearth.nasa.gov/images/144898/earth-at-night-black-marble-2016-color-maps) | NASA Earth Observatory | Public domain |
+
+The renderer's post-processing chain and material patterns are adapted from ODD TIDE (same portfolio collection, reused with permission).
 
 ### Audio (all CC0 1.0, public domain)
 

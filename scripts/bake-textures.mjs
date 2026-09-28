@@ -274,4 +274,55 @@ for (const [file, name, q] of [
   save(`${out}/planet/${name}.webp`, b64);
 }
 
+// 6. KayKit Rogue atlas repainted as a bellhop uniform: the green tunic cells become bellhop
+//    red, the bright neckerchief a gold braid, steel fittings brass, gloves white.
+const bellhop = await page.evaluate(
+  async ({ url }) => {
+    const d = await window.img(url, 1024, 1024);
+    // Swatches are 128 px wide and 256 px tall (8 columns × 4 rows).
+    const cell = (x, y) => `${Math.floor(x / 128)},${Math.floor(y / 256)}`;
+    // Cells measured from each mesh's UVs: tunic (0,1), cuffs and neckerchief (1,1), buckle
+    // (3,0), gloves (5,2), straps (5,0)/(6,0), trousers (7,1), boots (3,2). Hair, skin and eyes stay.
+    const tunic = new Set(["0,1"]);
+    const braid = new Set(["1,1"]);
+    const metal = new Set(["3,0"]);
+    const gloves = new Set(["5,2"]);
+    const straps = new Set(["5,0", "6,0"]);
+    const trousers = new Set(["7,1"]);
+    const boots = new Set(["3,2"]);
+    for (let y = 0; y < 1024; y++) {
+      for (let x = 0; x < 1024; x++) {
+        const i = (y * 1024 + x) * 4;
+        const r = d.data[i] / 255;
+        const g = d.data[i + 1] / 255;
+        const b = d.data[i + 2] / 255;
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const c = cell(x, y);
+        let out = null;
+        if (tunic.has(c)) out = [0.62, 0.2, 0.2].map((k) => k * (0.55 + lum * 1.4));
+        else if (braid.has(c)) out = [0.95, 0.76, 0.42].map((k) => k * (0.6 + lum * 0.9));
+        else if (metal.has(c)) out = [0.93, 0.74, 0.4].map((k) => k * (0.45 + lum * 0.8));
+        else if (gloves.has(c)) out = [0.96, 0.94, 0.9].map((k) => k * (0.7 + lum * 0.5));
+        else if (straps.has(c)) out = [0.36, 0.13, 0.12].map((k) => k * (0.6 + lum * 1.1));
+        else if (trousers.has(c)) out = [0.16, 0.19, 0.28].map((k) => k * (0.7 + lum * 1.2));
+        else if (boots.has(c)) out = [0.12, 0.1, 0.1].map((k) => k * (0.7 + lum * 1.4));
+        if (!out) continue;
+        d.data[i] = Math.min(255, out[0] * 255);
+        d.data[i + 1] = Math.min(255, out[1] * 255);
+        d.data[i + 2] = Math.min(255, out[2] * 255);
+      }
+    }
+    // The swatches are smooth gradients, so 256 px holds them without banding.
+    const c = new OffscreenCanvas(256, 256);
+    const x = c.getContext("2d");
+    const full = new OffscreenCanvas(1024, 1024);
+    full.getContext("2d").putImageData(d, 0, 0);
+    x.imageSmoothingQuality = "high";
+    x.drawImage(full, 0, 0, 256, 256);
+    return window.encode(x.getImageData(0, 0, 256, 256), 0.92);
+  },
+  { url: dataUrl("kaykit/addons/kaykit_character_pack_adventures/Assets/gltf/rogue_texture.png") },
+);
+save(`${out}/character/bellhop_atlas.webp`, bellhop);
+
 await browser.close();

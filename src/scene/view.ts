@@ -3,8 +3,9 @@ import { itemInReach, railInReach } from "../game/actions";
 import { preview } from "../game/predict";
 import type { GameEvent, GameState } from "../game/types";
 import { closestOnSegment } from "../game/vec";
-import { AttendantView, ItemView } from "./actors";
+import { ItemView } from "./actors";
 import { Atmosphere } from "./atmosphere";
+import { AttendantView } from "./attendant";
 import { Effects } from "./effects";
 import { buildFixtures, type Fixtures } from "./fixtures";
 import { Guides } from "./guides";
@@ -80,6 +81,7 @@ export class GameView {
       if (e.type === "throw") {
         this.effects.burst(e.pos, e.dir, soft ? 3 : 8, 2.4);
         this.attendant.kick(0.9, e.dir);
+        this.attendant.gesture("throw");
         // Thrown things tumble; the side of the throw decides which way.
         this.items.get(e.item)?.spinUp((e.dir.x >= 0 ? -1 : 1) * (4 + Math.random() * 2));
       } else if (e.type === "push") {
@@ -93,6 +95,7 @@ export class GameView {
           const into = this.impactDir(e.pos, state);
           this.attendant.kick(Math.min(0.9, e.strength * 0.2), into);
           if (e.strength > 2.2 && !soft) this.stage.nudge(into, Math.min(0.25, e.strength * 0.05));
+          if (e.strength > 2.6) this.attendant.gesture("hit");
         } else {
           for (const it of state.items) {
             if (Math.hypot(it.pos.x - e.pos.x, it.pos.y - e.pos.y) < 0.6)
@@ -102,6 +105,9 @@ export class GameView {
       } else if (e.type === "bonk") {
         this.effects.burst(e.pos, null, soft ? 3 : 10, 1.6, 0.1);
         this.attendant.kick(0.8, this.impactDir(e.pos, state));
+        this.attendant.gesture("hit");
+      } else if (e.type === "task") {
+        this.attendant.gesture("cheer");
       } else if (e.type === "place") {
         this.effects.burst(e.pos, { x: 0, y: 0.6 }, soft ? 4 : 16, 1.8, 0.07);
       } else if (e.type === "grab" && e.target === "rail") {

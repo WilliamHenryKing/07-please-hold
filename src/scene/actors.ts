@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import type { Item, ItemKind, Player } from "../game/types";
+import type { Item, ItemKind } from "../game/types";
 import { mat, PAL } from "./palette";
 import { surfaces } from "./surfaces";
 
@@ -8,115 +8,6 @@ function part(geo: THREE.BufferGeometry, look: number | THREE.Material, rough = 
   const m = new THREE.Mesh(geo, typeof look === "number" ? mat(look, rough, metal) : look);
   m.castShadow = true;
   return m;
-}
-
-/** The attendant: bellhop uniform, pillbox hat, one arm that always points where you aim. */
-export class AttendantView {
-  readonly root = new THREE.Group();
-  private body = new THREE.Group();
-  private reachArm = new THREE.Group();
-  private idleArm = new THREE.Group();
-  private legs = new THREE.Group();
-  private squash = 0;
-  /** Squash happens along the impact direction: rig rotated to it, body counter-rotated. */
-  private rig = new THREE.Group();
-  private inner = new THREE.Group();
-
-  constructor() {
-    const lib = surfaces();
-    const wool = lib.cloth(PAL.uniform);
-    const torso = part(new THREE.CapsuleGeometry(0.25, 0.32, 8, 24), wool);
-    const belt = part(new THREE.TorusGeometry(0.25, 0.04, 10, 32), lib.brass);
-    // Braided collar in the trim colour, where the tunic meets the neck.
-    const collar = part(new THREE.TorusGeometry(0.16, 0.035, 10, 32), lib.cloth(PAL.uniformTrim));
-    collar.rotation.x = Math.PI / 2;
-    collar.position.y = 0.3;
-    this.body.add(collar);
-    // Brass tunic buttons down the front.
-    for (const by of [0.2, 0.08]) {
-      const button = part(new THREE.SphereGeometry(0.025, 10, 8), lib.brass);
-      button.position.set(0, by, 0.245);
-      this.body.add(button);
-    }
-    belt.rotation.x = Math.PI / 2;
-    belt.position.y = -0.06;
-    const head = part(new THREE.SphereGeometry(0.2, 20, 14), PAL.skin);
-    head.position.y = 0.46;
-    const hat = part(new THREE.CylinderGeometry(0.15, 0.15, 0.12, 28), wool);
-    hat.position.set(0.02, 0.64, 0);
-    hat.rotation.z = -0.15;
-    const band = part(new THREE.TorusGeometry(0.15, 0.025, 8, 28), lib.brass);
-    band.rotation.x = Math.PI / 2;
-    band.position.copy(hat.position).y -= 0.04;
-    for (const side of [-1, 1]) {
-      const eye = part(new THREE.SphereGeometry(0.025, 8, 6), 0x2a2020);
-      eye.position.set(side * 0.07, 0.48, 0.18);
-      this.body.add(eye);
-    }
-    this.body.add(torso, belt, head, hat, band);
-
-    const arm = () => {
-      const a = part(new THREE.CapsuleGeometry(0.07, 0.34, 6, 14), wool);
-      a.position.y = 0.22;
-      const hand = part(new THREE.SphereGeometry(0.08, 10, 8), PAL.skin);
-      hand.position.y = 0.44;
-      const g = new THREE.Group();
-      g.add(a, hand);
-      return g;
-    };
-    this.reachArm.add(arm());
-    this.reachArm.position.set(0.18, 0.12, 0.12);
-    this.idleArm.add(arm());
-    this.idleArm.position.set(-0.18, 0.12, -0.08);
-    const trousers = lib.cloth(0x2f3446);
-    for (const side of [-1, 1]) {
-      const leg = part(new THREE.CapsuleGeometry(0.09, 0.36, 6, 14), trousers);
-      leg.position.set(side * 0.1, -0.24, 0);
-      this.legs.add(leg);
-    }
-    this.legs.position.y = -0.22;
-    this.body.add(this.reachArm, this.idleArm, this.legs);
-    this.inner.add(this.body);
-    this.rig.add(this.inner);
-    this.root.add(this.rig);
-  }
-
-  /** Visible recoil or impact: a quick squash along `dir` (world space). */
-  kick(strength = 1, dir: { x: number; y: number } = { x: 0, y: 1 }) {
-    this.squash = Math.min(1, this.squash + strength);
-    const a = Math.atan2(dir.y, dir.x);
-    this.rig.rotation.z = a;
-    this.inner.rotation.z = -a;
-  }
-
-  update(p: Player, t: number, dt: number, motion: number) {
-    this.root.position.set(p.pos.x, p.pos.y, 0);
-    const aimAngle = Math.atan2(p.aim.y, p.aim.x);
-    this.reachArm.rotation.z = aimAngle - Math.PI / 2;
-    // Facing follows the aim horizontally, so the reaching arm reads clearly.
-    const facing = p.aim.x < -0.1 ? -1 : 1;
-    this.body.scale.x = THREE.MathUtils.lerp(this.body.scale.x, facing, Math.min(1, dt * 10));
-    if (facing < 0) this.reachArm.rotation.z = Math.PI - aimAngle - Math.PI / 2;
-    const onRail = !!p.rail;
-    this.idleArm.rotation.z = onRail ? 0.4 : 0.9 + Math.sin(t * 1.3) * 0.2 * motion;
-    const vx = p.vel.x * facing;
-    this.body.rotation.z = THREE.MathUtils.lerp(
-      this.body.rotation.z,
-      -vx * 0.06 * motion,
-      Math.min(1, dt * 4),
-    );
-    this.legs.rotation.z = THREE.MathUtils.lerp(
-      this.legs.rotation.z,
-      vx * 0.12 * motion + Math.sin(t * 0.9) * 0.08 * motion,
-      Math.min(1, dt * 4),
-    );
-    this.body.position.y = onRail ? 0 : Math.sin(t * 1.1) * 0.03 * motion;
-    this.squash = Math.max(0, this.squash - dt * 4);
-    // Springy: flattens along the hit, bulges across it, with a little overshoot.
-    const k = this.squash;
-    const s = Math.sin(k * Math.PI * 1.5) * k * 0.3 * motion;
-    this.rig.scale.set(1 - s, 1 + s * 0.6, 1 + s * 0.3);
-  }
 }
 
 const rbox = (w: number, h: number, d: number, r: number) => new RoundedBoxGeometry(w, h, d, 3, r);

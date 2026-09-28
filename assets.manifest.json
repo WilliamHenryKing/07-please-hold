@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "project": "07-please-hold",
   "policy": "Same-origin public assets only; CC0, public domain or NASA imagery. Every shipped file is listed with its sha256.",
-  "totalShippedBytes": 5728949,
+  "totalShippedBytes": 5932317,
   "assets": [
     {
       "id": "ambientcg-leather037",
@@ -396,6 +396,37 @@
         }
       ],
       "role": "background music"
+    },
+    {
+      "id": "kaykit-adventurers-rogue",
+      "title": "KayKit Character Pack: Adventurers 1.0, Rogue (rigged, animated)",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+      "author": "Kay Lousberg (KayKit)",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "Rogue.glb": "e825437cd4d2ee9c1960b517a74a69101e33eb409ae7fa8cedc7134a998fbb7d",
+        "rogue_texture.png": "a4032e877c3b91939f5cdbb630349c1998fdbc3211bbd587c111125500fe4cc5"
+      },
+      "processingSteps": [
+        "Kept the six body meshes (removed weapons and cape) and five of 76 animations: Jump_Idle, Throw, Interact, Hit_A, Cheer",
+        "npx @gltf-transform/cli@4 prune, resize (embedded texture to 32 px placeholder), meshopt (EXT_meshopt_compression + KHR_mesh_quantization): 3.6 MB to 199 KB",
+        "scripts/bake-textures.mjs: repainted the gradient atlas as a bellhop uniform (red tunic, gold braid, brass buckle, white gloves, navy trousers, black boots) at 256 px WebP; applied at runtime",
+        "Runtime: pillbox hat on the head bone and brass buttons on the chest bone, one arm posed along the aim"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/models/bellhop.glb",
+          "bytes": 199372,
+          "sha256": "7037e746a9b15ec26d017c1bd07a0e4541ddc0702582c305b60ef8721afb490a"
+        },
+        {
+          "path": "public/textures/character/bellhop_atlas.webp",
+          "bytes": 3996,
+          "sha256": "c53afb0f4e11bb2b31332b4ffd428e5464ca4a812f3211f85dc756518b0fc7bf"
+        }
+      ],
+      "role": "the attendant (bellhop)"
     }
   ]
 }

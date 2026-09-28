@@ -83,7 +83,7 @@ Design and code for the portfolio collection. The room and props are modelled in
 
 ### Visual assets
 
-| Files in `public/textures/` | Use | Source | Author | Licence |
+| Files in `public/textures/` (and `public/models/`) | Use | Source | Author | Licence |
 | --- | --- | --- | --- | --- |
 | `upholstery/*` (baked from Leather 037 plus a procedural tuft field) | Quilted panels, pads, buttons | [ambientCG Leather037](https://ambientcg.com/view?id=Leather037) | ambientCG | CC0 |
 | `brass/*` (from Metal 054 A) | Brass rails and trims, steel rims | [ambientCG Metal054A](https://ambientcg.com/view?id=Metal054A) | ambientCG | CC0 |

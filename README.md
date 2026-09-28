@@ -1,69 +1,84 @@
-# PLEASE HOLD
+<div align="center">
 
-A tiny zero-gravity workplace comedy. You are the new attendant on a small orbital lounge, everything floats, and the guests keep requesting tea.
+<img src="docs/readme/banner.svg" alt="PLEASE HOLD: a bellhop drifts past quilted walls and a porthole onto a slowly turning planet" width="100%">
 
-**Status:** v1 playable, polished after the first local test. Three compact rooms and five tasks, built on one movement rule (shared momentum). There is an in-place first-time hint, 1–3 stars per room (moves and time against par, bests kept in this browser), and a finale in which the call finally connects, followed by a run summary and replay. Desktop and phone layouts, mouse, touch and keyboard, and reduced-motion support. All visuals are procedural three.js. Sound is CC0 music, SFX and ambience with a persistent mute toggle. Not deployed.
+<a href="https://07-please-hold.williamking.workers.dev"><img alt="Play it live" src="https://img.shields.io/badge/Play%20it%20live-8C3B3B?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
+<img alt="three.js" src="https://img.shields.io/badge/three.js%200.186-8C3B3B?style=for-the-badge&logo=threedotjs&logoColor=white">
+<img alt="React 19" src="https://img.shields.io/badge/React%2019-8C3B3B?style=for-the-badge&logo=react&logoColor=white">
+<img alt="TypeScript" src="https://img.shields.io/badge/TypeScript%20strict-8C3B3B?style=for-the-badge&logo=typescript&logoColor=white">
+<img alt="Vite 8" src="https://img.shields.io/badge/Vite%208-8C3B3B?style=for-the-badge&logo=vite&logoColor=white">
+<img alt="Bun" src="https://img.shields.io/badge/Bun%201.3-8C3B3B?style=for-the-badge&logo=bun&logoColor=white">
+<img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS%204-8C3B3B?style=for-the-badge&logo=tailwindcss&logoColor=white">
+<img alt="GSAP" src="https://img.shields.io/badge/GSAP%203-8C3B3B?style=for-the-badge&logo=greensock&logoColor=white">
+
+**You are the new attendant on a tiny orbital lounge: everything floats, you can only move by throwing things or pushing off rails, and the guests would like their tea.**
+
+<img src="docs/readme/preview.gif" alt="The bellhop throws a cushion, recoils back to the handrail, catches the returning cushion and throws it onto the sofa" width="800">
+
+</div>
 
 ## How to play
 
-You move only by pushing off rails or by throwing things. A thrown object goes one way and you recoil the other. A rail stops you dead. Anything you carry makes your push-offs slower.
+One rule moves everything: **momentum is shared.** Throw the cushion one way and you drift the other. Grab a rail and you stop dead. Carry something heavy and your push-offs get slower. The useful item is also your propulsion.
 
-| Action | Mouse / keyboard | Touch |
+| Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
 | Aim | Move the pointer, or arrows / WASD | Drag on the room |
-| Throw the held item, push off the rail, or grab what is near | Click or Space | Release the drag, or the red button |
-| Grab the nearest rail or item | E or right-click | GRAB |
-| Push off the rail while carrying the item | Q | PUSH OFF CARRYING |
-| Restart the room | R | RESTART |
-| Mute / unmute sound | M | 🔊 button |
+| Throw what you hold, push off the rail, or grab what is near | Click or Space | Release the drag, or the red button |
+| Grab the nearest rail or item | E or right-click | **Grab** |
+| Push off the rail while carrying the item | Q | **Push off carrying** |
+| Restart the room | R | **Restart** |
+| Mute or unmute | M | 🔊 |
 
-Dotted guides preview each move before you commit. Cream dots show where the thrown item (or you) will go. Coral dots show your recoil. A green ring marks whatever is in reach.
+Dotted guides preview every move before you commit: cream for where the thrown item (or you) will go, coral for your recoil. A green ring marks whatever is in reach.
 
-Each tidied room shows its stars, moves (throws + push-offs) and time against par and your best. Pars:
+Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp, rescue a runaway breakfast tray, and carry a covered tea flask through a slowly revolving compartment. Then the call finally connects.
 
-| Room | Par moves | Par time |
-| --- | --- | --- |
-| Arrival Lounge | 3 | 0:25 |
-| Conservatory | 7 | 0:55 |
-| Galley Ring | 4 | 0:35 |
+## What's inside
 
-Three stars means within par on both; two means within double par on both.
+- **One honest physics rule.** Throws, push-offs, catches and bonks all conserve momentum, so every move is predictable and every mistake is funny.
+- **Three compact rooms, five tasks, one finale.** Each room is scored 1–3 stars on moves and time against par. Your bests stay in this browser. After room 3 the hold music fades, the line rings, and your shift is reviewed.
+- **Warm orbital domesticity.** Quilted panels that dent when you bounce off them, brass rails, soft lamp pools, drifting dust, and a porthole onto a huge planet that shifts with parallax.
+- **A camera that never makes you seasick.** It is fixed and gently tilted. On a portrait phone the room turns a quarter to fill the screen, because in orbit there is no "up".
+- **Feel.** The attendant squashes along the hit, thrown things tumble, there is a faint drift trail, and hard bumps give a tiny camera nudge. All of it is toned down under `prefers-reduced-motion`.
+- **Sound design.** CC0 elevator music on hold, padded thumps, brass clinks, a pizzicato jingle per task, station hum, a synthesised phone ring, and a mute that remembers.
+- **Mouse, touch and keyboard.** Labelled controls, visible focus, and an in-place first-time hint.
 
-On a portrait phone the view turns a quarter so the room fills the screen. There is no "up" in orbit; keyboard aiming follows the screen.
+## Screenshots
 
-Rooms and tasks:
+<table>
+  <tr>
+    <td width="72%"><img src="docs/readme/desktop.png" alt="Desktop: the conservatory, with the fern, the breakfast tray and the biscuit cloud" width="100%"></td>
+    <td width="28%"><img src="docs/readme/phone.png" alt="Phone: the galley ring turned to fill a portrait screen" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">Desktop, 1440 × 900</td>
+    <td align="center">Phone, 390 × 844</td>
+  </tr>
+</table>
 
-1. **Arrival Lounge:** you are stranded just beyond a handrail with a cushion. Throw it, drift back to the rail, then get the cushion back onto the sofa. It will return at an inconvenient moment.
-2. **Conservatory:** put the fern beneath its lamp and rescue the runaway breakfast tray. The lounge-tidiness notice rotates past a cloud of perfectly intact biscuits.
-3. **Galley Ring:** carry the covered tea through the revolving compartment to the guest.
+## Built with
 
-A hatch opens when a room is tidy. The final evaluation reviews your shift.
+Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. Every model, texture and the planet is authored procedurally in code.
 
-## Code map
+Notable techniques:
 
-- `src/game/`: pure rules and state (momentum, collisions, rooms, tasks, hints, preview paths, evaluation). Tested in `tests/game.test.ts`.
-- `src/scene/`: three.js stage (fixed, slightly tilted camera that turns for portrait; AgX tone mapping; key light and hemisphere light; soft shadows), padded room shell with denting wall pads and lamp light pools, planet shader with porthole parallax, fixtures, actors, atmosphere (dust, contact shadows, drift trail), guides and effects.
-- `src/audio/`: the event-to-sound mapping (`cues.ts`, tested) and the Web Audio mixer (`engine.ts`), including the synthesised ring in the finale.
-- `src/ui/`: React HUD, room star card, finale, input binding, the HUD store and local best records.
-- `src/main.tsx`: wiring and the fixed-step loop. `src/loader.ts` lifts the arrival veil after the first frame.
+- **Shared-momentum movement on a fixed 120 Hz step.** `src/game/` is pure TypeScript with no DOM: impulses, restitution, a revolving bar with surface velocity, and trajectory previews. It is covered by unit tests.
+- **The portrait camera.** Framing solves for the room's long side against the HUD's safe band, turning the view a quarter on tall screens. Keyboard aiming is remapped so "up" is always screen-up.
+- **An event-driven presentation layer.** The simulation emits events (throw, grab, bump, place), and the renderer, the audio mixer and the HUD each react to them independently. That keeps effects, sound and the React HUD out of the rules.
 
-## Development
+## Run it locally
 
 ```sh
-bun install --frozen-lockfile
+bun install
 bun run dev      # http://127.0.0.1:4517/
-bun run check    # tsc, Biome, bun test, production build into dist/
-bun run preview  # http://127.0.0.1:4617/
-bun run e2e      # Playwright: builds, serves the preview and plays room 1 headless
+bun run check    # strict tsc, Biome, bun test, production build into dist/
+bun run e2e      # optional: Playwright plays room 1 headless
 ```
-
-The end-to-end test (`e2e/room1.pw.ts`) drives the real keyboard and pointer. It uses the Chromium that Playwright 1.56.1 expects, or any SwiftShader-capable Chromium. It reads game state through a probe exposed only when the URL has `?e2e`. It is not part of `bun run check`, because it needs a browser.
-
-`development/` holds the old smoke harness and is not part of the game.
 
 ## Credits
 
-Design, code and all visuals by the project author. Everything visual is authored procedurally in code: geometry, the planet shader, the notice texture and the favicon. The finale's phone ring is synthesised with Web Audio. Text uses the system font stack. Built with three.js, React, GSAP and Tailwind CSS (see `package.json`).
+Design and code for the portfolio collection. All visuals are procedural; the finale's phone ring is synthesised with Web Audio; text uses the system font stack.
 
 ### Audio (all CC0 1.0, public domain)
 
@@ -78,3 +93,7 @@ Sound starts on the first click, tap or key press. The files load after that and
 | `hatch.ogg` (`doorOpen_000`), `room.ogg` (`doorClose_000`), `hum.ogg` (`spaceEngineLow_002`), `revolve.ogg` (`engineCircular_000`) | Hatch opening, entering a room, station hum ambience, revolving-compartment loop | [Kenney Sci-fi Sounds](https://kenney.nl/assets/sci-fi-sounds) | Kenney (kenney.nl) | CC0 |
 
 The Kenney pack licence files state "Creative Commons Zero, CC0". The OpenGameArt page lists the licence as CC0. No attribution is required; it is given here anyway.
+
+---
+
+<p align="center">Part of William King's portfolio collection</p>

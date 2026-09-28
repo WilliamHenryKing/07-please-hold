@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "project": "07-please-hold",
   "policy": "Same-origin public assets only; CC0, public domain or NASA imagery. Every shipped file is listed with its sha256.",
-  "totalShippedBytes": 5932317,
+  "totalShippedBytes": 4211406,
   "assets": [
     {
       "id": "ambientcg-leather037",
@@ -35,8 +35,8 @@
         },
         {
           "path": "public/textures/upholstery/tufted_leather_arm.webp",
-          "bytes": 173814,
-          "sha256": "c996c6ab62ebdba28fe265b9184e3e2488e0a9ef229f984791cf0f92d497eda4"
+          "bytes": 67296,
+          "sha256": "937fe76f62d954a8e30881f971903c78ad2eb19eb8cd5aa75270a3f1ffe68226"
         },
         {
           "path": "public/textures/upholstery/tufted_leather_color.webp",
@@ -45,8 +45,8 @@
         },
         {
           "path": "public/textures/upholstery/tufted_leather_normal.webp",
-          "bytes": 410520,
-          "sha256": "d2ecfa44bea73ce65df17159b7065291b230c1ff214ed6003f627ee0ba97aed3"
+          "bytes": 248510,
+          "sha256": "2263ef3287eb86c8554d884c84843caf9c150145ec38b88cae4f063bff858c8d"
         }
       ],
       "role": "quilted wall panels, pads, buttons"
@@ -95,7 +95,7 @@
       },
       "processingSteps": [
         "Copied from ODD TIDE (public/textures/wool_boucle), whose record lists the Poly Haven download and the originals' sha256 above",
-        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs)"
+        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs); only the normal and ARM maps ship (the colour comes from the material)"
       ],
       "outputFiles": [
         {
@@ -104,14 +104,9 @@
           "sha256": "99a35cc09209f88137acdef0c13f0f9a01bde76714917be08f9c3cd97f28f686"
         },
         {
-          "path": "public/textures/fabric/wool_boucle_diff_512.webp",
-          "bytes": 116208,
-          "sha256": "abb455cada7a197f98752247f3cacfd21eadd779c94bb9e2a6c0c2c8d0583964"
-        },
-        {
           "path": "public/textures/fabric/wool_boucle_nor_gl_512.webp",
-          "bytes": 112604,
-          "sha256": "cacb6bbd06855b047f759aa27f83b9d21ec97b0b107f4b8da8c41de2cfd091e8"
+          "bytes": 90466,
+          "sha256": "9e116de1560a7623dc5a2b240367ad44e89406bddd441924b07f93991b83dc51"
         }
       ],
       "role": "sofa, guest seat and cushion"
@@ -130,7 +125,7 @@
       },
       "processingSteps": [
         "Copied from ODD TIDE (public/textures/rough_linen), whose record lists the Poly Haven download and the originals' sha256 above",
-        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs)"
+        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs); only the normal and ARM maps ship (the colour comes from the material)"
       ],
       "outputFiles": [
         {
@@ -139,14 +134,9 @@
           "sha256": "86a57d95818a400d3d26b25d7f11b136b80dcc37bacb884ef7388f89e4f842af"
         },
         {
-          "path": "public/textures/cloth/rough_linen_diff_512.webp",
-          "bytes": 40000,
-          "sha256": "f424268751590e70200243c2bd06a076602307b0e41ef7ba40878da746e2f75a"
-        },
-        {
           "path": "public/textures/cloth/rough_linen_nor_gl_512.webp",
-          "bytes": 64252,
-          "sha256": "e4c654c220f5479004d189cef10fdc3e3fc31dc3f8f76856e8530af4eaee1617"
+          "bytes": 39796,
+          "sha256": "aee27d383d2198a8f4d41b1b2884387b8c03cb8c0116da011c001d2ba99a3405"
         }
       ],
       "role": "bellhop and guest uniforms, lamp shade"
@@ -163,13 +153,14 @@
       },
       "processingSteps": [
         "Downloaded the 1k Radiance HDR from dl.polyhaven.org",
-        "Shipped unmodified; pre-filtered at runtime with PMREMGenerator as the scene environment"
+        "scripts/bake-textures.mjs: decoded RGBE, box-filtered to 512 x 256, wrote flat RGBE (it only feeds a PMREM)",
+        "Pre-filtered at runtime with PMREMGenerator as the scene environment"
       ],
       "outputFiles": [
         {
-          "path": "public/textures/env/anniversary_lounge_1k.hdr",
-          "bytes": 1612616,
-          "sha256": "7ca7917180c19864e7c4dba97a2c4660eb91c22307e4afed6f044759bc285721"
+          "path": "public/textures/env/anniversary_lounge_512.hdr",
+          "bytes": 524337,
+          "sha256": "44fe7d1d4f426de6fe386b41f2bc3b55ad021010f075ff7da706fbaa961251dc"
         }
       ],
       "role": "image-based lighting and reflections"
@@ -214,8 +205,8 @@
       "outputFiles": [
         {
           "path": "public/textures/planet/earth_clouds_2k.webp",
-          "bytes": 486072,
-          "sha256": "972d32536c4af549e386fa9ed9552abefbd9bee1cce2ecf4146144e556e9beac"
+          "bytes": 324770,
+          "sha256": "f684b776def23a80c149ca4911b38f8365dd4182b25744e717b412d8a71b2e9c"
         }
       ],
       "role": "Earth through the portholes and outside the hull"

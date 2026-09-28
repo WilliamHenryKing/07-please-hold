@@ -183,8 +183,8 @@ const quilt = await page.evaluate(
     }
     return {
       color: await window.encode(alb, 0.9),
-      normal: await window.encode(nrm, 0.92),
-      arm: await window.encode(arm, 0.9),
+      normal: await window.encode(nrm, 0.84),
+      arm: await window.encode(arm, 0.84),
     };
   },
   {
@@ -247,9 +247,9 @@ for (const [set, dir, size] of [
   ["wool_boucle", "fabric", 512],
   ["rough_linen", "cloth", 512],
 ]) {
+  // Only the weave (normal + ARM) ships: the dye comes from the material colour.
   for (const [kind, q] of [
-    ["diff", 0.88],
-    ["nor_gl", 0.92],
+    ["nor_gl", 0.88],
     ["arm", 0.9],
   ]) {
     const b64 = await page.evaluate(({ url, s, q }) => window.resize(url, s, s, q), {
@@ -264,7 +264,7 @@ for (const [set, dir, size] of [
 // 5. NASA Earth: Blue Marble (day), cloud cover and Black Marble (night lights) at 2048 × 1024.
 for (const [file, name, q] of [
   ["world.topo.bathy.200412.3x5400x2700.jpg", "earth_day_2k", 0.86],
-  ["cloud_combined_2048.jpg", "earth_clouds_2k", 0.82],
+  ["cloud_combined_2048.jpg", "earth_clouds_2k", 0.62],
   ["BlackMarble_2016_3km.jpg", "earth_night_2k", 0.82],
 ]) {
   const b64 = await page.evaluate(({ url, q }) => window.resize(url, 2048, 1024, q), {
@@ -326,3 +326,77 @@ const bellhop = await page.evaluate(
 save(`${out}/character/bellhop_atlas.webp`, bellhop);
 
 await browser.close();
+
+// 7. HDRI: the environment only feeds pre-filtered (PMREM) light, so 512 × 256 is plenty.
+//    Decode Radiance RGBE (new-style RLE), box-filter 2×, write flat RGBE.
+{
+  const buf = readFileSync(`${src}/anniversary_lounge_1k.hdr`);
+  let pos = 0;
+  const line = () => {
+    const end = buf.indexOf(10, pos);
+    const text = buf.subarray(pos, end).toString("latin1");
+    pos = end + 1;
+    return text;
+  };
+  let header = line();
+  while (header !== "") header = line();
+  const [, h, , w] = line()
+    .split(" ")
+    .map((v, i) => (i % 2 ? Number(v) : v));
+  const W = Number(w);
+  const Hh = Number(h);
+  const rgb = new Float32Array(W * Hh * 3);
+  const scan = new Uint8Array(W * 4);
+  for (let y = 0; y < Hh; y++) {
+    pos += 4; // 2, 2, width hi, width lo
+    for (let c = 0; c < 4; c++) {
+      let x = 0;
+      while (x < W) {
+        let n = buf[pos++];
+        if (n > 128) {
+          n -= 128;
+          const v = buf[pos++];
+          for (let k = 0; k < n; k++) scan[x++ * 4 + c] = v;
+        } else for (let k = 0; k < n; k++) scan[x++ * 4 + c] = buf[pos++];
+      }
+    }
+    for (let x = 0; x < W; x++) {
+      const e = scan[x * 4 + 3];
+      const f = e ? 2 ** (e - 136) : 0;
+      for (let c = 0; c < 3; c++) rgb[(y * W + x) * 3 + c] = scan[x * 4 + c] * f;
+    }
+  }
+  const w2 = W / 2;
+  const h2 = Hh / 2;
+  const outBytes = [
+    Buffer.from(`#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y ${h2} +X ${w2}\n`, "latin1"),
+  ];
+  const px = Buffer.alloc(w2 * h2 * 4);
+  for (let y = 0; y < h2; y++)
+    for (let x = 0; x < w2; x++) {
+      const c = [0, 1, 2].map((k) => {
+        let sum = 0;
+        for (const [dx, dy] of [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+        ])
+          sum += rgb[((2 * y + dy) * W + 2 * x + dx) * 3 + k];
+        return sum / 4;
+      });
+      const m = Math.max(...c);
+      const i = (y * w2 + x) * 4;
+      if (m < 1e-32) continue;
+      const e = Math.ceil(Math.log2(m));
+      const scale = 256 / 2 ** e;
+      px[i] = Math.min(255, Math.floor(c[0] * scale));
+      px[i + 1] = Math.min(255, Math.floor(c[1] * scale));
+      px[i + 2] = Math.min(255, Math.floor(c[2] * scale));
+      px[i + 3] = e + 128;
+    }
+  outBytes.push(px);
+  mkdirSync(`${out}/env`, { recursive: true });
+  writeFileSync(`${out}/env/anniversary_lounge_512.hdr`, Buffer.concat(outBytes));
+  console.log(`wrote ${out}/env/anniversary_lounge_512.hdr (${(px.length / 1024).toFixed(0)} KB)`);
+}

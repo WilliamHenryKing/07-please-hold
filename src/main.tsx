@@ -127,14 +127,19 @@ function frame(now: number) {
     first = false;
     layout();
     // Lift the veil once the sourced textures are in (never later than the loader's cap).
-    void assetsReady.then(() =>
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          worldReady();
-          if (visualTest) visualTest.ready = true;
-        }),
-      ),
-    );
+    // Once critical textures are in, compile every shader off the main thread (parallel
+    // shader compile where supported) so the first visible frame does not hitch.
+    void assetsReady
+      .then(() => view.stage.renderer.compileAsync(view.stage.scene, view.stage.camera))
+      .catch(() => undefined)
+      .then(() =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            worldReady();
+            if (visualTest) visualTest.ready = true;
+          }),
+        ),
+      );
   }
   requestAnimationFrame(frame);
 }

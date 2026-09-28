@@ -19,14 +19,36 @@ export const assetsReady = new Promise<void>((resolve) => {
 manager.onLoad = () => resolveReady();
 manager.onError = (url) => console.warn(`texture failed: ${url}`);
 
-export function tex(path: string, colour: boolean, repeat = 1, flipY = true): THREE.Texture {
+const lateLoader = new THREE.TextureLoader();
+
+/**
+ * Load a texture. Critical maps count toward the arrival veil; `late` maps (not visible at
+ * arrival, such as the night-side city lights) start only after the veil has lifted.
+ */
+export function tex(
+  path: string,
+  colour: boolean,
+  repeat = 1,
+  flipY = true,
+  late = false,
+): THREE.Texture {
   const key = `${path}|${repeat}|${flipY}`;
   const existing = cache.get(key);
   if (existing) return existing;
-  const t = loader.load(base + path, (loaded) => {
+  const onLoad = (loaded: THREE.Texture) => {
     loaded.flipY = flipY;
     loaded.needsUpdate = true;
-  });
+  };
+  let t: THREE.Texture;
+  if (late) {
+    t = new THREE.Texture();
+    void assetsReady.then(() =>
+      lateLoader.load(base + path, (img) => {
+        t.image = img.image;
+        onLoad(t);
+      }),
+    );
+  } else t = loader.load(base + path, onLoad);
   t.flipY = flipY;
   t.colorSpace = colour ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -56,7 +78,7 @@ export function pbrSet(color: string, normal: string, arm: string, repeat = 1): 
  */
 export function loadEnvironment(renderer: THREE.WebGLRenderer, scene: THREE.Scene) {
   const pmrem = new THREE.PMREMGenerator(renderer);
-  new HDRLoader(manager).load(`${base}env/anniversary_lounge_1k.hdr`, (hdr) => {
+  new HDRLoader(manager).load(`${base}env/anniversary_lounge_512.hdr`, (hdr) => {
     hdr.mapping = THREE.EquirectangularReflectionMapping;
     const env = pmrem.fromEquirectangular(hdr).texture;
     scene.environment = env;

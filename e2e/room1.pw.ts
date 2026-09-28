@@ -23,7 +23,8 @@ const probe = <T>(page: Page, fn: (p: Probe) => T): Promise<T> =>
 /** Wait until something is in reach, then press E; retry if the moment slipped by. */
 async function grabWhenReachable(page: Page, done: () => Promise<boolean>, tries = 6) {
   for (let i = 0; i < tries; i++) {
-    await page.waitForFunction(() => window.__hold.canGrab(), undefined, { timeout: 20_000 });
+    // Generous: on software GL each frame is slow, and the game advances at most 0.1 s per frame.
+    await page.waitForFunction(() => window.__hold.canGrab(), undefined, { timeout: 90_000 });
     await page.keyboard.press("KeyE");
     if (await done()) return;
   }
@@ -34,7 +35,7 @@ test("room 1: throw, catch the rail, recover the cushion, leave through the hatc
   page,
 }) => {
   await page.goto("/?e2e&quality=low");
-  await expect(page.locator("#arrival")).toHaveCount(0, { timeout: 30_000 });
+  await expect(page.locator("#arrival")).toHaveCount(0, { timeout: 60_000 });
   await page.waitForFunction(() => !!window.__hold);
   await page.locator("#stage").focus();
 
@@ -57,7 +58,7 @@ test("room 1: throw, catch the rail, recover the cushion, leave through the hatc
   await page.mouse.move(sofa.x, sofa.y);
   await page.mouse.down();
   await page.mouse.up();
-  await expect.poll(() => probe(page, (p) => p.state().hatchOpen), { timeout: 15_000 }).toBe(true);
+  await expect.poll(() => probe(page, (p) => p.state().hatchOpen), { timeout: 60_000 }).toBe(true);
   await expect(page.getByText("Arrival Lounge tidy")).toBeVisible();
 
   // Push off toward the open hatch and float through it into room 2.
@@ -65,6 +66,6 @@ test("room 1: throw, catch the rail, recover the cushion, leave through the hatc
   await page.mouse.move(hatch.x, hatch.y);
   await page.mouse.down();
   await page.mouse.up();
-  await expect.poll(() => probe(page, (p) => p.state().roomIndex), { timeout: 20_000 }).toBe(1);
+  await expect.poll(() => probe(page, (p) => p.state().roomIndex), { timeout: 60_000 }).toBe(1);
   await expect(page.getByText("Room 2 of 3")).toBeVisible();
 });

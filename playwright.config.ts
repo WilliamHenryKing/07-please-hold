@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "e2e",
   testMatch: /.*\.pw\.ts/,
-  timeout: 120_000,
+  timeout: 300_000,
   retries: 1,
   reporter: "list",
   use: {

@@ -36,18 +36,15 @@ function build() {
       "upholstery/leather_arm.webp",
       repeat,
     );
-  const boucle = pbrSet(
-    "fabric/wool_boucle_diff_512.webp",
-    "fabric/wool_boucle_nor_gl_512.webp",
-    "fabric/wool_boucle_arm_512.webp",
-    1.5,
-  );
-  const linen = pbrSet(
-    "cloth/rough_linen_diff_512.webp",
-    "cloth/rough_linen_nor_gl_512.webp",
-    "cloth/rough_linen_arm_512.webp",
-    7,
-  );
+  // Fabrics ship weave only (normal + ARM); the dye comes from each material's colour.
+  const boucle = {
+    normalMap: tex("fabric/wool_boucle_nor_gl_512.webp", false, 1.5),
+    arm: tex("fabric/wool_boucle_arm_512.webp", false, 1.5),
+  };
+  const linen = {
+    normalMap: tex("cloth/rough_linen_nor_gl_512.webp", false, 7),
+    arm: tex("cloth/rough_linen_arm_512.webp", false, 7),
+  };
   const brushed = {
     normalMap: tex("brass/brushed_metal_normal.webp", false, 2),
     arm: tex("brass/brushed_metal_arm.webp", false, 2),

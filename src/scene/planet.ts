@@ -17,7 +17,7 @@ function earthTextures() {
   if (!earth) {
     earth = {
       day: tex("planet/earth_day_2k.webp", true),
-      night: tex("planet/earth_night_2k.webp", true),
+      night: tex("planet/earth_night_2k.webp", true, 1, true, true),
       clouds: tex("planet/earth_clouds_2k.webp", false),
     };
     for (const t of Object.values(earth)) {

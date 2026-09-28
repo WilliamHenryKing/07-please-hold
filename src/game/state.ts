@@ -57,6 +57,7 @@ export function loadRoom(state: GameState, index: number, rooms: RoomDef[] = ROO
   state.hatchOpen = false;
   state.spinnerAngle = room.spinner?.angle ?? 0;
   state.phase = "playing";
+  state.roomStart = { time: state.stats.time, moves: state.stats.throws + state.stats.pushes };
   state.events.push({ type: "room", index });
 }
 
@@ -73,6 +74,8 @@ export function createGame(rooms: RoomDef[] = ROOMS, startRoom = 0): GameState {
     hatchOpen: false,
     spinnerAngle: 0,
     stats: emptyStats(),
+    roomStart: { time: 0, moves: 0 },
+    results: [],
     events: [],
   } as GameState;
   loadRoom(state, startRoom, rooms);

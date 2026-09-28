@@ -1,3 +1,5 @@
+import type { RoomResult } from "./scoring";
+
 // Pure data shapes for PLEASE HOLD. The world is a flat side-view plane: x right, y up,
 // origin at the centre of the room. Depth only exists in the renderer.
 
@@ -116,5 +118,9 @@ export interface GameState {
   hatchOpen: boolean;
   spinnerAngle: number;
   stats: Stats;
+  /** Totals when the current room began, so each room is scored on its own. */
+  roomStart: { time: number; moves: number };
+  /** One entry per finished room, in order. */
+  results: RoomResult[];
   events: GameEvent[];
 }

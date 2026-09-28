@@ -8,6 +8,7 @@ import {
 } from "./constants";
 import { collideBodies, collideSpinner, collideWalls, drift, type Impact } from "./physics";
 import { ROOMS } from "./rooms";
+import { roomResult } from "./scoring";
 import { handPosition, isLastRoom, loadRoom } from "./state";
 import type { GameState, Item } from "./types";
 import { dist } from "./vec";
@@ -86,6 +87,7 @@ function checkTasks(state: GameState) {
     state.events.push({ type: "task", index });
   });
   if (state.hatchOpen || !state.done.every(Boolean)) return;
+  state.results.push(roomResult(state));
   if (isLastRoom(state) || !state.room.hatch) {
     state.phase = "done";
     state.events.push({ type: "done" });

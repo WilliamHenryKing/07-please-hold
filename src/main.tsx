@@ -91,11 +91,14 @@ if (root) {
   createRoot(root).render(<App store={store} controls={controls} reduced={reducedQuery.matches} />);
 }
 
+// Slow motion for recording the README capture on slow software renderers (?e2e only).
+const params = new URLSearchParams(window.location.search);
+const timeScale = params.has("e2e") ? Number(params.get("timescale") ?? 1) || 1 : 1;
 let last = performance.now();
 let carry = 0;
 let first = true;
 function frame(now: number) {
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const dt = Math.min(0.1, (now - last) / 1000) * timeScale;
   last = now;
   input.poll();
   carry = advance(state, carry + dt);

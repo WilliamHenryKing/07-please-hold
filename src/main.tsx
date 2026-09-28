@@ -37,7 +37,7 @@ reducedQuery.addEventListener("change", setMotion);
 
 const layout = () => {
   const phone = window.innerWidth < 640;
-  view.stage.insets = phone ? { top: 0.17, bottom: 0.2 } : { top: 0.1, bottom: 0.1 };
+  view.stage.insets = phone ? { top: 0.21, bottom: 0.19 } : { top: 0.1, bottom: 0.1 };
   view.stage.resize();
 };
 window.addEventListener("resize", layout);
@@ -74,7 +74,7 @@ const controls = {
 const input = bindInput(canvas, {
   toWorld: (x, y) => view.stage.toWorld(x, y),
   aimAt: (p) => aimAt(state, p),
-  aimAlong: (d) => aimAlong(state, d),
+  aimAlong: (d) => aimAlong(state, view.stage.screenToWorldDir(d)),
   ...controls,
   setMode: (m) => {
     mode = m;

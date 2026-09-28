@@ -59,7 +59,7 @@ Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp,
 
 ## Built with
 
-Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. Geometry is modelled in code; surfaces use sourced CC0 scans (tufted leather, brushed brass, bouclé, linen), and the planet is NASA imagery.
+Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. The bellhop is KayKit's CC0 rigged character, repainted in uniform; the room and props are modelled in code; surfaces use sourced CC0 scans (tufted leather, brushed brass, bouclé, linen), and the planet is NASA imagery.
 
 Notable techniques:
 
@@ -79,7 +79,7 @@ bun run e2e      # optional: Playwright plays room 1 headless
 
 ## Credits
 
-Design and code for the portfolio collection. Geometry is modelled in code; the finale's phone ring is synthesised with Web Audio; text uses the system font stack. Every shipped asset is listed with its source, licence and sha256 in [`assets.manifest.json`](assets.manifest.json). Shipped assets total about 5.5 MB.
+Design and code for the portfolio collection. The room and props are modelled in code; the finale's phone ring is synthesised with Web Audio; text uses the system font stack. Every shipped asset is listed with its source, licence and sha256 in [`assets.manifest.json`](assets.manifest.json). Shipped assets total about 4 MB.
 
 ### Visual assets
 
@@ -87,9 +87,10 @@ Design and code for the portfolio collection. Geometry is modelled in code; the 
 | --- | --- | --- | --- | --- |
 | `upholstery/*` (baked from Leather 037 plus a procedural tuft field) | Quilted panels, pads, buttons | [ambientCG Leather037](https://ambientcg.com/view?id=Leather037) | ambientCG | CC0 |
 | `brass/*` (from Metal 054 A) | Brass rails and trims, steel rims | [ambientCG Metal054A](https://ambientcg.com/view?id=Metal054A) | ambientCG | CC0 |
+| `models/bellhop.glb`, `character/bellhop_atlas.webp` (trimmed, compressed and repainted as a bellhop) | The attendant | [KayKit Character Pack: Adventurers (Rogue)](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | Kay Lousberg | CC0 |
 | `fabric/wool_boucle_*` | Sofa, guest seat, cushion | [Poly Haven Wool Boucle](https://polyhaven.com/a/wool_boucle) (via ODD TIDE) | Poly Haven | CC0 |
 | `cloth/rough_linen_*` | Uniforms, lamp shade | [Poly Haven Rough Linen](https://polyhaven.com/a/rough_linen) (via ODD TIDE) | Poly Haven | CC0 |
-| `env/anniversary_lounge_1k.hdr` | Image-based light and reflections | [Poly Haven Anniversary Lounge](https://polyhaven.com/a/anniversary_lounge) | Greg Zaal | CC0 |
+| `env/anniversary_lounge_512.hdr` (downsampled) | Image-based light and reflections | [Poly Haven Anniversary Lounge](https://polyhaven.com/a/anniversary_lounge) | Greg Zaal | CC0 |
 | `planet/earth_day_2k.webp` | Earth, day side | [NASA Blue Marble Next Generation](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation-w-topography-and-bathymetry) | NASA Earth Observatory | Public domain |
 | `planet/earth_clouds_2k.webp` | Cloud cover | [NASA Blue Marble: Clouds](https://visibleearth.nasa.gov/images/57747/blue-marble-clouds) | NASA Visible Earth | Public domain |
 | `planet/earth_night_2k.webp` | City lights on the night side | [NASA Black Marble 2016](https://visibleearth.nasa.gov/images/144898/earth-at-night-black-marble-2016-color-maps) | NASA Earth Observatory | Public domain |

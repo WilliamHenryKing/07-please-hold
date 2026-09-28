@@ -14,7 +14,10 @@ const browser = await chromium.launch({
 const probe = await browser.newPage();
 await probe.goto(`${base}/?e2e`);
 await probe.waitForFunction(() => window.__VISUAL_TEST__?.ready, undefined, { timeout: 60_000 });
-const { bookmarks, renderer } = await probe.evaluate(() => window.__VISUAL_TEST__);
+const all = await probe.evaluate(() => window.__VISUAL_TEST__);
+const only = process.env.ONLY?.split(",");
+const bookmarks = only ? all.bookmarks.filter((b) => only.includes(b)) : all.bookmarks;
+const { renderer } = all;
 await probe.close();
 console.log(`renderer: ${renderer}`);
 

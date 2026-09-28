@@ -58,6 +58,13 @@ export const BOOKMARKS: Bookmark[] = [
     player: { pos: { x: -3.6, y: -2.4 }, aim: { x: 1, y: 0 } },
   },
   {
+    name: "conservatory-play",
+    room: 1,
+    viewport: DESKTOP,
+    camera: null,
+    player: { pos: { x: -4.7, y: -0.6 }, aim: { x: 0.9, y: 0.45 }, rail: "west" },
+  },
+  {
     name: "phone-hero",
     room: 2,
     viewport: PHONE,

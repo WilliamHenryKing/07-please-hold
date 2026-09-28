@@ -40,7 +40,7 @@ function build() {
     "fabric/wool_boucle_diff_512.webp",
     "fabric/wool_boucle_nor_gl_512.webp",
     "fabric/wool_boucle_arm_512.webp",
-    3,
+    1.5,
   );
   const linen = pbrSet(
     "cloth/rough_linen_diff_512.webp",
@@ -92,7 +92,8 @@ function build() {
     /** Wool bouclé for the sofa and the guest's seat. */
     fabric: (color: number) =>
       pbr(
-        boucle,
+        // Loops from the normal and roughness maps; the scan's albedo tiled into a check.
+        { normalMap: boucle.normalMap, arm: boucle.arm },
         { color, roughness: 1, sheen: 0.6, sheenRoughness: 0.8, sheenColor: 0xffffff },
         1,
       ),

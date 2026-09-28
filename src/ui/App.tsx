@@ -27,7 +27,7 @@ function RoomBanner({ index, name, reduced }: { index: number; name: string; red
     <div
       ref={el}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 top-[18%] z-10 sm:top-[40%] text-center opacity-0"
+      className="pointer-events-none fixed inset-x-0 top-[44%] z-10 sm:top-[40%] text-center opacity-0"
     >
       <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#e3c7a1]">
         Room {index + 1}

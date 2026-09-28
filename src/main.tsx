@@ -7,6 +7,7 @@ import type { InputMode } from "./game/hints";
 import { createGame } from "./game/state";
 import { advance, drainEvents } from "./game/step";
 import { worldReady } from "./loader";
+import { assetsReady } from "./scene/assets";
 import { GameView } from "./scene/view";
 import { App } from "./ui/App";
 import { bindInput } from "./ui/input";
@@ -125,10 +126,15 @@ function frame(now: number) {
   if (first) {
     first = false;
     layout();
-    requestAnimationFrame(() => {
-      worldReady();
-      if (visualTest) visualTest.ready = true;
-    });
+    // Lift the veil once the sourced textures are in (never later than the loader's cap).
+    void assetsReady.then(() =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          worldReady();
+          if (visualTest) visualTest.ready = true;
+        }),
+      ),
+    );
   }
   requestAnimationFrame(frame);
 }

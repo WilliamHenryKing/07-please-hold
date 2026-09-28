@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import type { RoomDef, Vec } from "../game/types";
+import { loadEnvironment } from "./assets";
 import { PAL } from "./palette";
+import { Pipeline, pickQuality, type Quality } from "./pipeline";
 import { skyMaterial } from "./planet";
 
 const FOV = 30;
@@ -11,6 +13,10 @@ export class Stage {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
   readonly key: THREE.DirectionalLight;
+  readonly quality: Quality = pickQuality();
+  readonly pipeline: Pipeline;
+  /** Objects kept out of the ambient-occlusion buffer (effects, guides, far sky). */
+  readonly aoHidden: THREE.Object3D[] = [];
   private room: RoomDef | null = null;
   private target = new THREE.Vector3();
   private home = new THREE.Vector3();
@@ -31,40 +37,74 @@ export class Stage {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
+      antialias: false,
       powerPreference: "high-performance",
+      stencil: false,
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(this.pixelRatio());
+    // Tone mapping and the sRGB transfer are applied once, by OutputPass in the pipeline.
     this.renderer.toneMapping = THREE.AgXToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene.background = new THREE.Color(PAL.space);
+    // Image-based light from a real lounge; it is the only ambient term (no hemisphere fill).
+    this.scene.environmentIntensity = 0.55;
+    loadEnvironment(this.renderer, this.scene);
     // Outside the hull: the same planet the portholes show, filling any spare screen.
     const sky = new THREE.Mesh(
       new THREE.PlaneGeometry(220, 220),
-      skyMaterial(new THREE.Vector2(-0.4, 1.1), 16),
+      skyMaterial(new THREE.Vector2(0.2, -0.2), 14),
     );
     sky.position.z = -45;
     this.scene.add(sky);
+    this.aoHidden.push(sky);
 
-    const hemi = new THREE.HemisphereLight(0xfff0dc, 0x6a7090, 1.4);
-    this.scene.add(hemi);
-    this.key = new THREE.DirectionalLight(0xffe2bd, 2.2);
+    // Key: a warm overhead panel light, in the same units as the lamps and the environment.
+    this.key = new THREE.DirectionalLight(0xffe6c4, 2.4);
     this.key.position.set(-5, 7, 9);
     this.key.castShadow = true;
-    this.key.shadow.mapSize.set(1024, 1024);
-    this.key.shadow.radius = 5;
-    this.key.shadow.bias = -0.0008;
+    const map = this.quality === "high" ? 2048 : 1024;
+    this.key.shadow.mapSize.set(map, map);
+    this.key.shadow.radius = 4;
+    this.key.shadow.bias = -0.0005;
+    this.key.shadow.normalBias = 0.02;
     const cam = this.key.shadow.camera;
-    cam.left = -9;
-    cam.right = 9;
-    cam.top = 7;
-    cam.bottom = -7;
     cam.near = 1;
     cam.far = 30;
     this.scene.add(this.key, this.key.target);
+    this.pipeline = new Pipeline(
+      this.renderer,
+      this.scene,
+      this.camera,
+      this.quality,
+      () => this.aoHidden,
+    );
+  }
+
+  private pixelRatio() {
+    return Math.min(window.devicePixelRatio, this.quality === "high" ? 2 : 1.5);
+  }
+
+  /** Fit the key light's shadow frustum to the room, snapped to whole shadow-map texels. */
+  private fitShadow(room: RoomDef) {
+    const cam = this.key.shadow.camera;
+    const half = Math.max(room.width, room.height) / 2 + 1.2;
+    cam.left = -half;
+    cam.right = half;
+    cam.top = half;
+    cam.bottom = -half;
+    cam.updateProjectionMatrix();
+    const texel = (2 * half) / this.key.shadow.mapSize.x;
+    const snap = (v: number) => Math.round(v / texel) * texel;
+    this.key.target.position.set(snap(0), snap(0), 0);
+    this.key.position.set(
+      snap(this.key.position.x),
+      snap(this.key.position.y),
+      this.key.position.z,
+    );
+    this.key.target.updateMatrixWorld();
   }
 
   /**
@@ -77,7 +117,9 @@ export class Stage {
     this.room = room;
     const w = this.renderer.domElement.clientWidth || window.innerWidth;
     const h = this.renderer.domElement.clientHeight || window.innerHeight;
+    this.renderer.setPixelRatio(this.pixelRatio());
     this.renderer.setSize(w, h, false);
+    this.pipeline.setSize(w, h, this.pixelRatio());
     this.camera.aspect = w / h;
     this.rolled = this.camera.aspect < 0.85 && room.width > room.height;
     const up = this.rolled ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
@@ -104,6 +146,7 @@ export class Stage {
     this.camera.updateProjectionMatrix();
     // Keep the key light up-left of the view whichever way the screen is turned.
     this.key.position.copy(up).multiplyScalar(7).addScaledVector(right, -5).setZ(9);
+    this.fitShadow(room);
   }
 
   /** Screen direction (x right, y up) to world direction, for keyboard aiming. */
@@ -170,6 +213,6 @@ export class Stage {
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
+    this.pipeline.render();
   }
 }

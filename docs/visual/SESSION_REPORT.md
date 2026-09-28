@@ -49,3 +49,54 @@ Shipped assets total **5.46 MB**: textures 3.7 MB (WebP, 2K maximum, plus a 1.6 
 - **Scoring renderer:** scores were judged on SwiftShader only; no GPU was available in this session.
 - **ODD TIDE access:** the clone succeeded (read-only, `/home/user/01-odd-tide`, commit `924febb`). I used its pipeline pattern, its material conventions (ARM packing and roles) and two fabric sets. I didn't use its sky model, because the porthole view needed NASA Earth rather than a sky dome.
 - **Reply:** this cloud session can't message other sessions, so this file is the report.
+
+---
+
+# Round 2: bellhop, props, load time
+
+## Scores (same six bookmarks, SwiftShader)
+
+| Bookmark | Baseline | Round 1 | Round 2 |
+| --- | --- | --- | --- |
+| establishing-wide | 2.6 | 3.1 | 3.4 |
+| hero | 2.3 | 3.0 | 3.1 |
+| close-up | 1.9 | 2.9 | 3.4 |
+| grazing-material | 2.0 | 3.1 | 3.3 |
+| porthole | 2.3 | 3.4 | 3.4 |
+| phone-hero | 2.6 | 3.0 | 3.0 |
+| **Overall** | **2.3** | **3.1** | **3.3** |
+
+## What changed
+
+1. **Bellhop** (`src/scene/attendant.ts`, `public/models/bellhop.glb`, 199 KB):
+   - KayKit "Adventurers" Rogue (CC0, rigged, animated), stripped to its body meshes and five of 76 animations: float, throw, grab, knock and cheer.
+   - Pruned and meshopt-compressed with `npx @gltf-transform/cli`: 3.6 MB → 199 KB.
+   - The gradient atlas is repainted in the bake as a bellhop: red tunic, gold braid, brass buckle, white gloves, navy trousers, black boots. The atlas cells were measured from each mesh's UVs.
+   - A pillbox hat on the head bone, brass buttons on the chest bone, and the uniform's weave normal.
+   - The base pose loops a weightless float. Throws, hard knocks and finished tasks play one-shot gestures, and one arm is re-posed every frame to point along the aim, so the throw direction reads at a glance.
+2. **Props** (`src/scene/props.ts`):
+   - Bouclé cushion with leather piping and covered buttons.
+   - Sofa with a plinth, brass feet, piped seat cushions, plump back cushions and rolled arms.
+   - Brass wall sconces with backplate screws, an arm, a collar and a frosted glass dome over the bulb, each with its real light.
+   - Rail flanges with three screws each, plus collars and end caps.
+3. **Load time.** Bytes before the arrival veil lifts went from 5.0 MB to 3.3 MB:
+   - HDRI 1.6 MB → 512 KB (512 × 256, decoded and re-encoded in the bake).
+   - Smaller clouds and tuft maps.
+   - Fabrics ship weave maps only.
+   - The night-lights map is deferred until after arrival.
+   - `renderer.compileAsync` runs before the first visible frame.
+   - Shipped assets now total 4.02 MB, including the model (see `assets.manifest.json`).
+4. **Captures and media:**
+   - `docs/visual/captures/round2/`
+   - `docs/readme/desktop.png` and `phone.png` refreshed.
+   - `preview.gif` re-recorded from the room-1 run.
+
+## Checks
+
+`bun run check` passes (27 tests). The Playwright room-1 test passes: 2.1 min on SwiftShader, with its waits widened for software GL, where every frame is slow and the game advances at most 0.1 s per frame.
+
+## What I could not do
+
+- **Load time on a GPU:** I couldn't verify the 3 s target here, since SwiftShader compiles shaders in software on the main thread. The asynchronous compile and the byte savings should show on the RTX 2060. If it's still above 3 s, the next step is splitting the 1.1 MB JS bundle (three.js post-processing and loaders into a lazy chunk).
+- **Bellhop hair and proportions:** they are KayKit's chibi Rogue (long hair, big head). That suits the lounge's toy-like warmth, but it is not a realistically proportioned figure. A human-proportioned CC0 option (Quaternius Universal Base Characters) is hosted on Google Drive, which I didn't try from here.
+- **Other props:** the fern, the breakfast tray and the biscuit notice are still simple primitives.

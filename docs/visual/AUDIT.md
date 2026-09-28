@@ -86,3 +86,39 @@ What changed:
 2. Porthole glass: a thin reflective pane with a faint smudge map, plus a cloud-shadow pass on the planet.
 3. Two or three tuft layouts across panels (and tufted frame pads), so the wall doesn't repeat.
 4. A 4K or tiled-detail Earth for the backdrop plane, or a crop that avoids magnification.
+
+## Round 2 (`docs/visual/captures/round2/`)
+
+Same renderer (SwiftShader), bookmarks and capture script. The bellhop is now KayKit's CC0 rigged "Rogue", repainted as a bellhop with a pillbox hat and brass buttons. The props are modelled (piped cushion, rolled-arm sofa, brass sconces, screwed rail flanges), and the loading path is lighter.
+
+| Bookmark | Light | Materials | Detail | Env. integration | Atmos./depth | Composition | Artefacts | Motion/UI | Mean | Round 1 | Baseline |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| establishing-wide | 3 | 3 | 4 | 4 | 3 | 4 | 3 | 3 | 3.4 | 3.1 | 2.6 |
+| hero | 3 | 3 | 3 | 3 | 3 | 4 | 3 | 3 | 3.1 | 3.0 | 2.3 |
+| close-up | 3 | 3 | 4 | 3 | 3 | 4 | 3 | 4 | 3.4 | 2.9 | 1.9 |
+| grazing-material | 3 | 4 | 4 | 3 | 3 | 3 | 3 | 3 | 3.3 | 3.1 | 2.0 |
+| porthole | 4 | 3 | 3 | 4 | 4 | 3 | 3 | 3 | 3.4 | 3.4 | 2.3 |
+| phone-hero | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3.0 | 3.0 | 2.6 |
+
+**Overall: 3.3, up from 3.1 (round 1) and 2.3 (baseline).**
+
+### Most visible remaining flaws
+
+- **establishing-wide:** repeated tuft pattern on every panel; plain frame pads; pixelation in the backdrop Earth.
+- **hero:** the fern, tray and biscuits are still simple primitives; the notice is flat; the hanging lamp shade is a plain cone.
+- **close-up:** the bellhop's hair is the Rogue's (long); the brass buttons sit slightly proud of the chest; the grip sleeve is plain.
+- **grazing-material:** a large bloom halo on the nearest sconce; the rounded panel sides stretch the texture; there is no porthole glass.
+- **porthole:** no glass layer; clouds cast no shadow; procedural stars only.
+- **phone-hero:** no AO on the phone tier; at portrait scale the bellhop is small; the lower porthole is mostly black space.
+
+### Loading (round 2)
+
+The desktop arrival downloads 3.3 MB before the veil lifts, down from 5.0 MB:
+
+- HDRI 1.6 MB → 512 KB (512 × 256; it only feeds a PMREM).
+- Tighter clouds (475 → 317 KB) and tufted normal/ARM maps (571 → 309 KB).
+- Fabric colour maps no longer ship.
+- The night-lights map loads after arrival.
+- Every shader is compiled with `compileAsync` before the first visible frame.
+
+The JS bundle (1.1 MB uncompressed, about 300 KB gzipped) is now the largest item. I couldn't measure GPU timings here: SwiftShader compiles shaders in software on the main thread, so its veil time (~20 s) says nothing about a real GPU.

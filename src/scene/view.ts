@@ -4,11 +4,12 @@ import { preview } from "../game/predict";
 import type { GameEvent, GameState } from "../game/types";
 import { closestOnSegment } from "../game/vec";
 import { AttendantView, ItemView } from "./actors";
+import { Atmosphere } from "./atmosphere";
 import { Effects } from "./effects";
 import { buildFixtures, type Fixtures } from "./fixtures";
 import { Guides } from "./guides";
 import { skyUniforms } from "./planet";
-import { buildShell } from "./roomShell";
+import { buildShell, type Shell } from "./roomShell";
 import { Stage } from "./stage";
 
 function dispose(obj: THREE.Object3D) {
@@ -30,6 +31,8 @@ export class GameView {
   private items = new Map<string, ItemView>();
   private guides = new Guides();
   private effects = new Effects();
+  private atmosphere = new Atmosphere();
+  private shell: Shell | null = null;
   private roomId = "";
   private t = 0;
   /** 1 for full motion, reduced for prefers-reduced-motion. */
@@ -37,7 +40,13 @@ export class GameView {
 
   constructor(canvas: HTMLCanvasElement) {
     this.stage = new Stage(canvas);
-    this.stage.scene.add(this.roomGroup, this.attendant.root, this.guides.group, this.effects.mesh);
+    this.stage.scene.add(
+      this.roomGroup,
+      this.attendant.root,
+      this.guides.group,
+      this.effects.mesh,
+      this.atmosphere.group,
+    );
   }
 
   private build(state: GameState) {
@@ -50,7 +59,9 @@ export class GameView {
       dispose(view.root);
     }
     this.items.clear();
-    this.roomGroup.add(buildShell(state.room));
+    this.shell = buildShell(state.room);
+    this.roomGroup.add(this.shell.group);
+    this.atmosphere.setRoom(state.room);
     this.fixtures = buildFixtures(state.room);
     this.roomGroup.add(this.fixtures.group);
     for (const item of state.items) {
@@ -67,23 +78,43 @@ export class GameView {
     for (const e of events) {
       if (e.type === "throw") {
         this.effects.burst(e.pos, e.dir, soft ? 3 : 8, 2.4);
-        this.attendant.kick(0.9);
+        this.attendant.kick(0.9, e.dir);
+        // Thrown things tumble; the side of the throw decides which way.
+        this.items.get(e.item)?.spinUp((e.dir.x >= 0 ? -1 : 1) * (4 + Math.random() * 2));
       } else if (e.type === "push") {
         this.effects.burst(state.player.pos, { x: -e.dir.x, y: -e.dir.y }, soft ? 3 : 7, 2);
-        this.attendant.kick(0.6);
+        this.attendant.kick(0.6, e.dir);
       } else if (e.type === "bump") {
         const n = Math.min(10, Math.round(e.strength * 2));
         this.effects.burst(e.pos, null, soft ? 2 : n, 1.2, e.who === "player" ? 0.1 : 0.06);
-        if (e.who === "player") this.attendant.kick(Math.min(0.8, e.strength * 0.15));
+        this.shell?.dent(e.pos, Math.min(1, e.strength * (e.who === "player" ? 0.3 : 0.15)));
+        if (e.who === "player") {
+          const into = this.impactDir(e.pos, state);
+          this.attendant.kick(Math.min(0.9, e.strength * 0.2), into);
+          if (e.strength > 2.2 && !soft) this.stage.nudge(into, Math.min(0.25, e.strength * 0.05));
+        } else {
+          for (const it of state.items) {
+            if (Math.hypot(it.pos.x - e.pos.x, it.pos.y - e.pos.y) < 0.6)
+              this.items.get(it.id)?.spinUp(e.strength * 0.8, true);
+          }
+        }
       } else if (e.type === "bonk") {
         this.effects.burst(e.pos, null, soft ? 3 : 10, 1.6, 0.1);
-        this.attendant.kick(0.8);
+        this.attendant.kick(0.8, this.impactDir(e.pos, state));
       } else if (e.type === "place") {
         this.effects.burst(e.pos, { x: 0, y: 0.6 }, soft ? 4 : 16, 1.8, 0.07);
       } else if (e.type === "grab" && e.target === "rail") {
         this.attendant.kick(0.3);
       }
     }
+  }
+
+  /** Direction from the attendant toward an impact point, for squash and nudges. */
+  private impactDir(at: { x: number; y: number }, state: GameState) {
+    const dx = at.x - state.player.pos.x;
+    const dy = at.y - state.player.pos.y;
+    const l = Math.hypot(dx, dy) || 1;
+    return { x: dx / l, y: dy / l };
   }
 
   update(state: GameState, dt: number) {
@@ -127,6 +158,15 @@ export class GameView {
       this.motion,
     );
     this.effects.update(dt);
+    this.shell?.update(dt);
+    const bodies = [state.player, ...state.items.filter((i) => !i.placed)];
+    this.atmosphere.update(this.t, dt, bodies, this.motion);
+    this.stage.settle(dt);
+    // Porthole parallax: the view outside shifts a little with the eye and the attendant.
+    const eye = this.stage.eye;
+    const px = (eye.x + state.player.pos.x * 0.5) * 0.025 * (0.3 + 0.7 * this.motion);
+    const py = (eye.y + state.player.pos.y * 0.5) * 0.025 * (0.3 + 0.7 * this.motion);
+    skyUniforms.uParallax.value.lerp(new THREE.Vector2(px, py), Math.min(1, dt * 3));
     this.stage.render();
   }
 }

@@ -6,6 +6,8 @@ import * as THREE from "three";
  */
 export const skyUniforms = {
   uTime: { value: 0 },
+  /** Eye offset from the room centre; each window shifts its view by it for parallax. */
+  uParallax: { value: new THREE.Vector2() },
 };
 
 const vertex = /* glsl */ `
@@ -19,6 +21,8 @@ const vertex = /* glsl */ `
 const fragment = /* glsl */ `
   uniform float uTime;
   uniform vec2 uOffset;
+  uniform vec2 uParallax;
+  uniform float uDepth;
   uniform float uScale;
   varying vec2 vUv;
 
@@ -35,7 +39,7 @@ const fragment = /* glsl */ `
   }
 
   void main() {
-    vec2 p = uOffset + (vUv - 0.5) * uScale;
+    vec2 p = uOffset - uParallax * uDepth + (vUv - 0.5) * uScale;
     // Space: deep blue with sparse stars that drift very slowly.
     vec2 sp = p * 40.0 * max(1.0, uScale * 0.5) + vec2(uTime * 0.05, 0.0);
     float star = step(0.992, hash(floor(sp))) * (0.6 + 0.4 * sin(uTime * 1.5 + hash(floor(sp)) * 6.28));
@@ -70,9 +74,14 @@ const fragment = /* glsl */ `
   }
 `;
 
-export function skyMaterial(offset: THREE.Vector2, scale: number) {
+export function skyMaterial(offset: THREE.Vector2, scale: number, depth = 0.3) {
   return new THREE.ShaderMaterial({
-    uniforms: { ...skyUniforms, uOffset: { value: offset }, uScale: { value: scale } },
+    uniforms: {
+      ...skyUniforms,
+      uOffset: { value: offset },
+      uScale: { value: scale },
+      uDepth: { value: depth },
+    },
     vertexShader: vertex,
     fragmentShader: fragment,
     toneMapped: false,

@@ -43,7 +43,34 @@ export const DRESSING: Record<string, { windows: Porthole[]; lamps: [number, num
 };
 
 const panelGeo = new RoundedBoxGeometry(1, 1, 0.24, 3, 0.1);
-const tuftGeo = new THREE.SphereGeometry(0.045, 8, 6);
+const quiltGeo = new RoundedBoxGeometry(1, 1, 0.42, 4, 0.17);
+const tuftGeo = new THREE.SphereGeometry(0.05, 8, 6);
+const QUILT_FRONT = BACK_Z + 0.21;
+
+function glowTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const x = c.getContext("2d");
+  if (x) {
+    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, "rgba(255,214,150,0.85)");
+    g.addColorStop(0.35, "rgba(255,190,120,0.35)");
+    g.addColorStop(1, "rgba(255,170,100,0)");
+    x.fillStyle = g;
+    x.fillRect(0, 0, 128, 128);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const glowTex = typeof document === "undefined" ? null : glowTexture();
+
+export interface Shell {
+  group: THREE.Group;
+  /** Press the padded wall nearest `at` in, as if something soft just hit it. */
+  dent: (at: { x: number; y: number }, strength: number) => void;
+  update: (dt: number) => void;
+}
 
 function instanced(geo: THREE.BufferGeometry, material: THREE.Material, n: number) {
   const mesh = new THREE.InstancedMesh(geo, material, n);
@@ -66,7 +93,7 @@ function backWall(room: RoomDef, windows: Porthole[], group: THREE.Group) {
       if (!blocked) cells.push({ x, y });
     }
   const panels = instanced(
-    panelGeo,
+    quiltGeo,
     new THREE.MeshStandardMaterial({ roughness: 0.92 }),
     cells.length,
   );
@@ -86,7 +113,7 @@ function backWall(room: RoomDef, windows: Porthole[], group: THREE.Group) {
     for (let k = 0; k < 4; k++) {
       const tx = cell.x + (k % 2 ? 0.22 : -0.22) * cw;
       const ty = cell.y + (k < 2 ? 0.22 : -0.22) * ch;
-      m.makeTranslation(tx, ty, BACK_Z + 0.115);
+      m.makeTranslation(tx, ty, QUILT_FRONT - 0.015);
       tufts.setMatrixAt(n * 4 + k, m);
     }
   });
@@ -105,7 +132,7 @@ function portholes(windows: Porthole[], group: THREE.Group) {
   for (const w of windows) {
     const glass = new THREE.Mesh(
       new THREE.CircleGeometry(w.r, 48),
-      skyMaterial(new THREE.Vector2(w.x * 0.25, w.y * 0.25), w.r * 0.5),
+      skyMaterial(new THREE.Vector2(w.x * 0.25, w.y * 0.25), w.r * 0.5, 1),
     );
     glass.position.set(w.x, w.y, BACK_Z - 0.05);
     const rim = new THREE.Mesh(
@@ -123,33 +150,50 @@ function portholes(windows: Porthole[], group: THREE.Group) {
   }
 }
 
-/** Padded floor, ceiling and side walls running toward the camera. */
-function frame(room: RoomDef, group: THREE.Group) {
+/** Padded floor, ceiling and side walls running toward the camera. They dent when hit. */
+function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"> {
   const hw = room.width / 2;
   const hh = room.height / 2;
   const t = 0.5;
-  const segs: { x: number; y: number; w: number; h: number }[] = [];
+  const segs: { x: number; y: number; w: number; h: number; nx: number; ny: number }[] = [];
   const along = Math.round(room.width / 1.5);
   for (let i = 0; i < along; i++) {
     const x = -hw + ((i + 0.5) * room.width) / along;
     const w = room.width / along - 0.06;
-    segs.push({ x, y: -hh - t / 2, w, h: t }, { x, y: hh + t / 2, w, h: t });
+    segs.push(
+      { x, y: -hh - t / 2, w, h: t, nx: 0, ny: -1 },
+      { x, y: hh + t / 2, w, h: t, nx: 0, ny: 1 },
+    );
   }
   const up = Math.round(room.height / 1.5);
   for (let j = 0; j < up; j++) {
     const y = -hh + ((j + 0.5) * room.height) / up;
     const h = room.height / up - 0.06;
-    segs.push({ x: -hw - t / 2, y, w: t, h }, { x: hw + t / 2, y, w: t, h });
+    segs.push(
+      { x: -hw - t / 2, y, w: t, h, nx: -1, ny: 0 },
+      { x: hw + t / 2, y, w: t, h, nx: 1, ny: 0 },
+    );
   }
   const pads = instanced(panelGeo, mat(PAL.panels[2], 0.9), segs.length);
   const m = new THREE.Matrix4();
-  segs.forEach((s, n) => {
-    m.compose(
-      new THREE.Vector3(s.x, s.y, (BACK_Z + FRONT_Z) / 2),
-      new THREE.Quaternion(),
-      new THREE.Vector3(s.w, s.h, DEPTH / 0.24),
+  const q = new THREE.Quaternion();
+  const squash = segs.map(() => 0);
+  const place = (n: number) => {
+    const s = segs[n];
+    if (!s) return;
+    // Compress the pad toward the hull, keeping its outer face in place.
+    const d = (squash[n] ?? 0) * t * 0.45;
+    const w = s.nx !== 0 ? s.w - d : s.w;
+    const h = s.ny !== 0 ? s.h - d : s.h;
+    const pos = new THREE.Vector3(
+      s.x + (s.nx * d) / 2,
+      s.y + (s.ny * d) / 2,
+      (BACK_Z + FRONT_Z) / 2,
     );
-    pads.setMatrixAt(n, m);
+    pads.setMatrixAt(n, m.compose(pos, q, new THREE.Vector3(w, h, DEPTH / 0.24)));
+  };
+  segs.forEach((_, n) => {
+    place(n);
   });
   group.add(pads);
   // Brass trim where the padding meets the front edge.
@@ -167,6 +211,33 @@ function frame(room: RoomDef, group: THREE.Group) {
     if (y1 === y2) bar.rotation.z = Math.PI / 2;
     group.add(bar);
   }
+  let dirty = false;
+  return {
+    dent(at, strength) {
+      let best = -1;
+      let bestD = Number.POSITIVE_INFINITY;
+      segs.forEach((s, n) => {
+        const d = Math.hypot(s.x - at.x, s.y - at.y);
+        if (d < bestD) {
+          bestD = d;
+          best = n;
+        }
+      });
+      if (best >= 0) squash[best] = Math.min(1, (squash[best] ?? 0) + strength);
+      dirty = true;
+    },
+    update(dt) {
+      if (!dirty) return;
+      dirty = false;
+      squash.forEach((v, n) => {
+        if (v <= 0) return;
+        squash[n] = Math.max(0, v - dt * 3);
+        place(n);
+        dirty = true;
+      });
+      pads.instanceMatrix.needsUpdate = true;
+    },
+  };
 }
 
 function lamps(list: [number, number][], group: THREE.Group) {
@@ -185,21 +256,33 @@ function lamps(list: [number, number][], group: THREE.Group) {
     base.rotation.x = Math.PI / 2;
     base.position.set(x, y, BACK_Z + 0.12);
     group.add(bulb, base);
+    // A warm pool of light spilling over the quilting around each lamp.
+    const pool = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.6, 3.6),
+      new THREE.MeshBasicMaterial({
+        map: glowTex,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        opacity: 0.55,
+      }),
+    );
+    pool.position.set(x, y, QUILT_FRONT + 0.02);
+    group.add(pool);
   }
-  const first = list[0];
-  if (first) {
-    const glow = new THREE.PointLight(PAL.lampGlow, 6, 9, 1.6);
-    glow.position.set(first[0], first[1], 0.2);
+  for (const [x, y] of list.slice(0, 2)) {
+    const glow = new THREE.PointLight(PAL.lampGlow, 5, 7, 1.6);
+    glow.position.set(x, y, BACK_Z + 0.9);
     group.add(glow);
   }
 }
 
-export function buildShell(room: RoomDef): THREE.Group {
+export function buildShell(room: RoomDef): Shell {
   const group = new THREE.Group();
   const dress = DRESSING[room.id] ?? { windows: [], lamps: [] };
   backWall(room, dress.windows, group);
   portholes(dress.windows, group);
-  frame(room, group);
+  const pads = frame(room, group);
   lamps(dress.lamps, group);
-  return group;
+  return { group, ...pads };
 }

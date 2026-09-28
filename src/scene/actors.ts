@@ -17,6 +17,9 @@ export class AttendantView {
   private idleArm = new THREE.Group();
   private legs = new THREE.Group();
   private squash = 0;
+  /** Squash happens along the impact direction: rig rotated to it, body counter-rotated. */
+  private rig = new THREE.Group();
+  private inner = new THREE.Group();
 
   constructor() {
     const torso = part(new THREE.CapsuleGeometry(0.25, 0.32, 6, 16), PAL.uniform);
@@ -58,12 +61,17 @@ export class AttendantView {
     }
     this.legs.position.y = -0.22;
     this.body.add(this.reachArm, this.idleArm, this.legs);
-    this.root.add(this.body);
+    this.inner.add(this.body);
+    this.rig.add(this.inner);
+    this.root.add(this.rig);
   }
 
-  /** Visible recoil: a quick squash along the throw direction. */
-  kick(strength = 1) {
+  /** Visible recoil or impact: a quick squash along `dir` (world space). */
+  kick(strength = 1, dir: { x: number; y: number } = { x: 0, y: 1 }) {
     this.squash = Math.min(1, this.squash + strength);
+    const a = Math.atan2(dir.y, dir.x);
+    this.rig.rotation.z = a;
+    this.inner.rotation.z = -a;
   }
 
   update(p: Player, t: number, dt: number, motion: number) {
@@ -72,7 +80,7 @@ export class AttendantView {
     this.reachArm.rotation.z = aimAngle - Math.PI / 2;
     // Facing follows the aim horizontally, so the reaching arm reads clearly.
     const facing = p.aim.x < -0.1 ? -1 : 1;
-    this.root.scale.x = THREE.MathUtils.lerp(this.root.scale.x, facing, Math.min(1, dt * 10));
+    this.body.scale.x = THREE.MathUtils.lerp(this.body.scale.x, facing, Math.min(1, dt * 10));
     if (facing < 0) this.reachArm.rotation.z = Math.PI - aimAngle - Math.PI / 2;
     const onRail = !!p.rail;
     this.idleArm.rotation.z = onRail ? 0.4 : 0.9 + Math.sin(t * 1.3) * 0.2 * motion;
@@ -89,8 +97,10 @@ export class AttendantView {
     );
     this.body.position.y = onRail ? 0 : Math.sin(t * 1.1) * 0.03 * motion;
     this.squash = Math.max(0, this.squash - dt * 4);
-    const s = this.squash * 0.22 * motion;
-    this.body.scale.set(1 + s, 1 - s, 1 + s * 0.5);
+    // Springy: flattens along the hit, bulges across it, with a little overshoot.
+    const k = this.squash;
+    const s = Math.sin(k * Math.PI * 1.5) * k * 0.3 * motion;
+    this.rig.scale.set(1 - s, 1 + s * 0.6, 1 + s * 0.3);
   }
 }
 
@@ -192,6 +202,7 @@ export class ItemView {
   private lastVel = new THREE.Vector2();
   private tilt = new THREE.Vector2();
   private tiltVel = new THREE.Vector2();
+  private spinRate = 0;
 
   constructor(kind: ItemKind) {
     const { g, slosh } = BUILDERS[kind]();
@@ -200,14 +211,23 @@ export class ItemView {
     this.root.add(this.spin);
   }
 
+  /** Set it spinning: thrown things tumble, bounces flip and boost the spin. */
+  spinUp(rate: number, flip = false) {
+    this.spinRate = (flip ? -this.spinRate : this.spinRate) + rate;
+    this.spinRate = THREE.MathUtils.clamp(this.spinRate, -9, 9);
+  }
+
   update(item: Item, dt: number, motion: number) {
     this.root.position.set(item.pos.x, item.pos.y, item.placed ? -0.05 : 0);
-    // Free items tumble gently with their speed; held and placed items settle upright.
+    // Free items tumble with their spin; held and placed items settle upright.
     const settled = item.held || item.placed;
-    const target = settled ? 0 : this.spin.rotation.z - item.vel.x * dt * 1.2 * motion;
-    this.spin.rotation.z = settled
-      ? THREE.MathUtils.lerp(this.spin.rotation.z, 0, Math.min(1, dt * 6))
-      : target;
+    if (settled) {
+      this.spinRate = 0;
+      this.spin.rotation.z = THREE.MathUtils.lerp(this.spin.rotation.z, 0, Math.min(1, dt * 6));
+    } else {
+      this.spinRate *= Math.max(0, 1 - dt * 0.25);
+      this.spin.rotation.z += (this.spinRate - item.vel.x * 0.3) * dt * motion;
+    }
     if (!this.slosh || dt <= 0) return;
     const ax = (item.vel.x - this.lastVel.x) / dt;
     const ay = (item.vel.y - this.lastVel.y) / dt;

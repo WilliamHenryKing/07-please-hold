@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "project": "07-please-hold",
+  "policy": "Same-origin public assets only; CC0, public domain or NASA imagery. Every shipped file is listed with its sha256.",
+  "totalShippedBytes": 5728949,
+  "assets": [
+    {
+      "id": "ambientcg-leather037",
+      "title": "Leather 037 (1K JPG)",
+      "sourceUrl": "https://ambientcg.com/view?id=Leather037",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "Leather037_1K-JPG_Color.jpg": "e1033ea8a95a313bdd80ea52aa04b1eee9a8934f1c695430408dacfc8636cc1a",
+        "Leather037_1K-JPG_NormalGL.jpg": "b0684254670e067d88fa89d04b1dabb832e4652246c7e3878604c713eecd50f7",
+        "Leather037_1K-JPG_Roughness.jpg": "b67300743ff88fe4aafd0d303997d9acaa7f2f730262a3079814d5b673721e46"
+      },
+      "processingSteps": [
+        "Downloaded the 1K-JPG zip from ambientCG",
+        "scripts/bake-textures.mjs: combined the grain normal (tiled 5x, whiteout blend) with a procedural tufting height field (five buttons, diamond creases, stitched border seam) into a 1024 normal map; packed AO (from the height field) and roughness into an ARM map; neutralised the albedo to a luminance modulation for per-panel tinting",
+        "Plain grain normal and ARM resized to 512",
+        "Encoded WebP (quality 0.9-0.92) in headless Chromium"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/upholstery/leather_arm.webp",
+          "bytes": 38930,
+          "sha256": "2feac960c819d8168e7ebeee0bd6f3b7845c7ad0f419afff2b43fd3d1ab9e32c"
+        },
+        {
+          "path": "public/textures/upholstery/leather_normal.webp",
+          "bytes": 97628,
+          "sha256": "35129f701ae3da1ea56ca657d732d439aab652f7b4c49087376e07d509053509"
+        },
+        {
+          "path": "public/textures/upholstery/tufted_leather_arm.webp",
+          "bytes": 173814,
+          "sha256": "c996c6ab62ebdba28fe265b9184e3e2488e0a9ef229f984791cf0f92d497eda4"
+        },
+        {
+          "path": "public/textures/upholstery/tufted_leather_color.webp",
+          "bytes": 38284,
+          "sha256": "63cc9c36678ec7c8b2a73c60891b3f41ee4593ffacd4308de6287d5084ba509b"
+        },
+        {
+          "path": "public/textures/upholstery/tufted_leather_normal.webp",
+          "bytes": 410520,
+          "sha256": "d2ecfa44bea73ce65df17159b7065291b230c1ff214ed6003f627ee0ba97aed3"
+        }
+      ],
+      "role": "quilted wall panels, pads, buttons"
+    },
+    {
+      "id": "ambientcg-metal054a",
+      "title": "Metal 054 A (1K JPG)",
+      "sourceUrl": "https://ambientcg.com/view?id=Metal054A",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "Metal054A_1K-JPG_NormalGL.jpg": "5ed478990881694ef1ddd142ac96d553a5ddfb171a622048bef3cf94836f6206",
+        "Metal054A_1K-JPG_Roughness.jpg": "52078dcfd5cbd7de5c09a0c1703f76185bcb8ac1d46b0e23401abf42f2a6a0fd"
+      },
+      "processingSteps": [
+        "Downloaded the 1K-JPG zip from ambientCG",
+        "Normal resized to 512; roughness biased glossy and packed as ARM (metalness 1) at 512",
+        "Encoded WebP in headless Chromium; tinted brass and steel in the material"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/brass/brushed_metal_arm.webp",
+          "bytes": 7898,
+          "sha256": "366d5fae0abc0b03e8a4b88af01da7452bd5c1a09623dfb674576a28439519a2"
+        },
+        {
+          "path": "public/textures/brass/brushed_metal_normal.webp",
+          "bytes": 1266,
+          "sha256": "792c45a6b54ac37faa5e2f48a9951fa9df65e5fb44fbcb08d09c8af372950575"
+        }
+      ],
+      "role": "brass handrails, trims, lamp bases; steel porthole rims"
+    },
+    {
+      "id": "polyhaven-wool_boucle",
+      "title": "Wool Boucle (1k diff/nor_gl/arm)",
+      "sourceUrl": "https://polyhaven.com/a/wool_boucle",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "originalSha256": {
+        "wool_boucle_arm_1k.jpg": "5a46c8ded370471c2f26a698e4b33abcaab59f823ead459b97c52297a096053b",
+        "wool_boucle_diff_1k.jpg": "fee39653b3c78efe89636508f2c10ceb38ecb10c0d735ae8dd4e9935cf26540e",
+        "wool_boucle_nor_gl_1k.jpg": "2cc13a2be4d0bb942a59a86d613665c0d24ff201560daa4d841cee597af0c752"
+      },
+      "processingSteps": [
+        "Copied from ODD TIDE (public/textures/wool_boucle), whose record lists the Poly Haven download and the originals' sha256 above",
+        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs)"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/fabric/wool_boucle_arm_512.webp",
+          "bytes": 122096,
+          "sha256": "99a35cc09209f88137acdef0c13f0f9a01bde76714917be08f9c3cd97f28f686"
+        },
+        {
+          "path": "public/textures/fabric/wool_boucle_diff_512.webp",
+          "bytes": 116208,
+          "sha256": "abb455cada7a197f98752247f3cacfd21eadd779c94bb9e2a6c0c2c8d0583964"
+        },
+        {
+          "path": "public/textures/fabric/wool_boucle_nor_gl_512.webp",
+          "bytes": 112604,
+          "sha256": "cacb6bbd06855b047f759aa27f83b9d21ec97b0b107f4b8da8c41de2cfd091e8"
+        }
+      ],
+      "role": "sofa, guest seat and cushion"
+    },
+    {
+      "id": "polyhaven-rough_linen",
+      "title": "Rough Linen (1k diff/nor_gl/arm)",
+      "sourceUrl": "https://polyhaven.com/a/rough_linen",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "originalSha256": {
+        "rough_linen_arm_1k.jpg": "e1ca6b51ed62834063253e08f8f2e23836aa00d72675b960ddd8e608d9f0c7e6",
+        "rough_linen_diff_1k.jpg": "04897d7611d7390ddf5b2c6f7273f448dfc48341fdbd1f4f207fa30b331d7f57",
+        "rough_linen_nor_gl_1k.jpg": "e2402166d1a489f7414814e69e1836ab672aa24e30bec2d41fea356f81687e53"
+      },
+      "processingSteps": [
+        "Copied from ODD TIDE (public/textures/rough_linen), whose record lists the Poly Haven download and the originals' sha256 above",
+        "Resized 1k to 512 and encoded WebP in headless Chromium (scripts/bake-textures.mjs)"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/cloth/rough_linen_arm_512.webp",
+          "bytes": 95794,
+          "sha256": "86a57d95818a400d3d26b25d7f11b136b80dcc37bacb884ef7388f89e4f842af"
+        },
+        {
+          "path": "public/textures/cloth/rough_linen_diff_512.webp",
+          "bytes": 40000,
+          "sha256": "f424268751590e70200243c2bd06a076602307b0e41ef7ba40878da746e2f75a"
+        },
+        {
+          "path": "public/textures/cloth/rough_linen_nor_gl_512.webp",
+          "bytes": 64252,
+          "sha256": "e4c654c220f5479004d189cef10fdc3e3fc31dc3f8f76856e8530af4eaee1617"
+        }
+      ],
+      "role": "bellhop and guest uniforms, lamp shade"
+    },
+    {
+      "id": "polyhaven-anniversary_lounge",
+      "title": "Anniversary Lounge HDRI (1k .hdr)",
+      "sourceUrl": "https://polyhaven.com/a/anniversary_lounge",
+      "author": "Greg Zaal (Poly Haven)",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "anniversary_lounge_1k.hdr": "7ca7917180c19864e7c4dba97a2c4660eb91c22307e4afed6f044759bc285721"
+      },
+      "processingSteps": [
+        "Downloaded the 1k Radiance HDR from dl.polyhaven.org",
+        "Shipped unmodified; pre-filtered at runtime with PMREMGenerator as the scene environment"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/env/anniversary_lounge_1k.hdr",
+          "bytes": 1612616,
+          "sha256": "7ca7917180c19864e7c4dba97a2c4660eb91c22307e4afed6f044759bc285721"
+        }
+      ],
+      "role": "image-based lighting and reflections"
+    },
+    {
+      "id": "nasa-earth_day_2k",
+      "title": "Blue Marble Next Generation, December, topography and bathymetry",
+      "sourceUrl": "https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation-w-topography-and-bathymetry",
+      "author": "NASA Earth Observatory / NASA Visible Earth",
+      "license": "Public domain (NASA imagery)",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "world.topo.bathy.200412.3x5400x2700.jpg": "a9f0088972dee0254610af851c4d6838ca3f2cf79176987e0a5713e2c15ec042"
+      },
+      "processingSteps": [
+        "Downloaded from eoimages.gsfc.nasa.gov",
+        "Resized to 2048 x 1024 equirectangular and encoded WebP in headless Chromium"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/planet/earth_day_2k.webp",
+          "bytes": 264348,
+          "sha256": "a824e6226109fa88a8e4f03b8e3cd112d338a6bc8e047b30ce4bb7f5f61f2117"
+        }
+      ],
+      "role": "Earth through the portholes and outside the hull"
+    },
+    {
+      "id": "nasa-earth_clouds_2k",
+      "title": "Blue Marble: Clouds",
+      "sourceUrl": "https://visibleearth.nasa.gov/images/57747/blue-marble-clouds",
+      "author": "NASA Earth Observatory / NASA Visible Earth",
+      "license": "Public domain (NASA imagery)",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "cloud_combined_2048.jpg": "daddaad84d7a33bbbc86cdda3f591099f57cee8607b7bcf3b67eb7e4f7a1c793"
+      },
+      "processingSteps": [
+        "Downloaded from eoimages.gsfc.nasa.gov",
+        "Resized to 2048 x 1024 equirectangular and encoded WebP in headless Chromium"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/planet/earth_clouds_2k.webp",
+          "bytes": 486072,
+          "sha256": "972d32536c4af549e386fa9ed9552abefbd9bee1cce2ecf4146144e556e9beac"
+        }
+      ],
+      "role": "Earth through the portholes and outside the hull"
+    },
+    {
+      "id": "nasa-earth_night_2k",
+      "title": "Earth at Night (Black Marble 2016)",
+      "sourceUrl": "https://visibleearth.nasa.gov/images/144898/earth-at-night-black-marble-2016-color-maps",
+      "author": "NASA Earth Observatory / NASA Visible Earth",
+      "license": "Public domain (NASA imagery)",
+      "retrievalDate": "2026-09-28",
+      "originalSha256": {
+        "BlackMarble_2016_3km.jpg": "230aac448ae68c358be433dd518888cccb3a85ccf66f7b44326441c324ad6725"
+      },
+      "processingSteps": [
+        "Downloaded from eoimages.gsfc.nasa.gov",
+        "Resized to 2048 x 1024 equirectangular and encoded WebP in headless Chromium"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/planet/earth_night_2k.webp",
+          "bytes": 66044,
+          "sha256": "fff35a5dc6078f2a15f13ff1928e9fd2ff0386e8fbdecd18d6d4594325bc2dc3"
+        }
+      ],
+      "role": "Earth through the portholes and outside the hull"
+    },
+    {
+      "id": "kenney-audio",
+      "title": "Kenney audio packs: Impact Sounds, Interface Sounds, Music Jingles, Sci-fi Sounds",
+      "sourceUrl": "https://kenney.nl/assets/category:Audio",
+      "author": "Kenney (kenney.nl)",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "originalSha256": {},
+      "processingSteps": [
+        "Downloaded the packs from kenney.nl",
+        "Selected OGG files shipped unmodified under new names (see README credits for the original names)"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/audio/bonk.ogg",
+          "bytes": 8800,
+          "sha256": "486988aa2d6440ffc4c62a0e8ccf3c23673ba84424bd4723378d451b7255eb5c"
+        },
+        {
+          "path": "public/audio/bump-0.ogg",
+          "bytes": 6749,
+          "sha256": "d130ae541951243d3f6ed963d0057450a445ffe117fbf9a084d34eb1635cb563"
+        },
+        {
+          "path": "public/audio/bump-1.ogg",
+          "bytes": 6665,
+          "sha256": "d00286a2dc62ee5cb4d42bf56120e7050a855f69e655fc1294410aadd337eba3"
+        },
+        {
+          "path": "public/audio/catch.ogg",
+          "bytes": 5392,
+          "sha256": "5c4a1f35fde7e14046931da7bc3d1b23736541b7190ba107e08a379c4ca43cd6"
+        },
+        {
+          "path": "public/audio/done.ogg",
+          "bytes": 30900,
+          "sha256": "241c8570fbded819ee0205e4be3efa80aeb834a70df89318da88f9e219798b11"
+        },
+        {
+          "path": "public/audio/hatch.ogg",
+          "bytes": 19616,
+          "sha256": "5b7e07eccd4413ad9ef3720c2d14f9cc699f4c50111e9b2f48bd60e6f1a164c3"
+        },
+        {
+          "path": "public/audio/hum.ogg",
+          "bytes": 72688,
+          "sha256": "3b1adf8645a40c35fcad25eee224c82c9836dc443102a9af5586eb22cbedabcc"
+        },
+        {
+          "path": "public/audio/place.ogg",
+          "bytes": 8968,
+          "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a"
+        },
+        {
+          "path": "public/audio/push-0.ogg",
+          "bytes": 6570,
+          "sha256": "49e7ca88743fca974bb8676ea138b751cfd8f9033b5e7af8736c2a215d6edbc1"
+        },
+        {
+          "path": "public/audio/push-1.ogg",
+          "bytes": 6689,
+          "sha256": "4d0096364ba9e46119d2ff6df493fdc101bd2e1efae061da5e5f77a53b3fdcb6"
+        },
+        {
+          "path": "public/audio/rail-0.ogg",
+          "bytes": 7651,
+          "sha256": "33b5e6e37c6e9d54e07bf5a89b12c76e879f40c1ea83cdd82714df1d6f9fec6d"
+        },
+        {
+          "path": "public/audio/rail-1.ogg",
+          "bytes": 6967,
+          "sha256": "fba69c467ddd85da7b1d82e259f936b876d9ba6a3d6f1b24bdd10468e46bfe08"
+        },
+        {
+          "path": "public/audio/restart.ogg",
+          "bytes": 7029,
+          "sha256": "61581c58194e3f19f531072edabbc344204c7e0a2887b8ededce4357bcf09195"
+        },
+        {
+          "path": "public/audio/revolve.ogg",
+          "bytes": 177470,
+          "sha256": "8ab85f9fa85e9e692287f98acb36b9ac3ba15313b007c039055e286b736f4e3a"
+        },
+        {
+          "path": "public/audio/room.ogg",
+          "bytes": 20369,
+          "sha256": "c9134651ebbd7c016f90393aee495ff8120bd343bb7569b689a7506987ebd6c2"
+        },
+        {
+          "path": "public/audio/tap-0.ogg",
+          "bytes": 5827,
+          "sha256": "f0e982611e97512fee5f777986b67e8b435434b601f94992ec044f7e89fb5acb"
+        },
+        {
+          "path": "public/audio/tap-1.ogg",
+          "bytes": 5636,
+          "sha256": "c3cd1c073d186ae8fa35788ba94de581f1826e7427a7bb26490b2695fac18efa"
+        },
+        {
+          "path": "public/audio/tap-2.ogg",
+          "bytes": 5795,
+          "sha256": "d0bf60905b59ff630ffe01eb0edeeacd2504eaa8fb6523aeef7d2458b78264d3"
+        },
+        {
+          "path": "public/audio/task.ogg",
+          "bytes": 11052,
+          "sha256": "f98fa4af012d443da636a2d90f2926adc2384ec833851918f88426be9a25acf9"
+        },
+        {
+          "path": "public/audio/throw-0.ogg",
+          "bytes": 5351,
+          "sha256": "7d3ba0bb5e60a11b5d3e558c141303dcf494256675fbf753c0d252d2cf0481e3"
+        },
+        {
+          "path": "public/audio/throw-1.ogg",
+          "bytes": 5506,
+          "sha256": "7642a4fd43e547afe4f7adfadb3dabb681c0ff512f52c1674bae30a726841faf"
+        },
+        {
+          "path": "public/audio/throw-2.ogg",
+          "bytes": 5358,
+          "sha256": "5069e3571a77d7f7aae9ef71d0364aa245fb7d64a7c8cc9956f221d03088c089"
+        },
+        {
+          "path": "public/audio/toggle.ogg",
+          "bytes": 7369,
+          "sha256": "ca1d2dde5f0b286abac4f070e23edab8f30927c8a533665cdf2ac6492a415e49"
+        }
+      ],
+      "role": "sound effects, jingles, ambience"
+    },
+    {
+      "id": "oga-elevator-music",
+      "title": "Elevator Music",
+      "sourceUrl": "https://opengameart.org/content/elevator-music",
+      "author": "Pro Sensory",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "originalSha256": {
+        "Elevator.mp3": "eca932ca45d60eb89aa717842a6fccaf7744ec6ee95c50965539c4a096fb2699"
+      },
+      "processingSteps": [
+        "Downloaded from opengameart.org",
+        "Shipped unmodified as hold-music.mp3"
+      ],
+      "outputFiles": [
+        {
+          "path": "public/audio/hold-music.mp3",
+          "bytes": 1536158,
+          "sha256": "eca932ca45d60eb89aa717842a6fccaf7744ec6ee95c50965539c4a096fb2699"
+        }
+      ],
+      "role": "background music"
+    }
+  ]
+}

@@ -33,7 +33,7 @@ async function grabWhenReachable(page: Page, done: () => Promise<boolean>, tries
 test("room 1: throw, catch the rail, recover the cushion, leave through the hatch", async ({
   page,
 }) => {
-  await page.goto("/?e2e");
+  await page.goto("/?e2e&quality=low");
   await expect(page.locator("#arrival")).toHaveCount(0, { timeout: 30_000 });
   await page.waitForFunction(() => !!window.__hold);
   await page.locator("#stage").focus();

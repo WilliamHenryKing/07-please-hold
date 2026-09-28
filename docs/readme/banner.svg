@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-labelledby="t d">
+  <title id="t">PLEASE HOLD</title>
+  <desc id="d">A bellhop drifts past quilted padded walls holding a cushion, beside a porthole onto a slowly turning planet. An on-hold light pulses.</desc>
+  <style>
+    .spin { transform-box: view-box; transform-origin: 1072px 318px; animation: spin 8s linear infinite; }
+    .drift { animation: drift 8s ease-in-out infinite; }
+    .tumble { transform-box: fill-box; transform-origin: center; animation: tumble 8s ease-in-out infinite; }
+    .cushion { transform-box: fill-box; transform-origin: center; animation: cushion 4s ease-in-out infinite; }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    .bar { transform-box: fill-box; transform-origin: 50% 100%; animation: bar 1s ease-in-out infinite; }
+    .b2 { animation-delay: -0.25s; } .b3 { animation-delay: -0.5s; } .b4 { animation-delay: -0.75s; }
+    .twinkle { animation: pulse 3s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(-360deg); } }
+    @keyframes drift {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(190px, -26px); }
+      100% { transform: translate(0, 0); }
+    }
+    @keyframes tumble { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+    @keyframes cushion { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-5px) rotate(6deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+    @keyframes bar { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spin, .drift, .tumble, .cushion, .pulse, .bar, .twinkle { animation: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c3140"/>
+      <stop offset="1" stop-color="#1d2130"/>
+    </linearGradient>
+    <linearGradient id="quilt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f1e4d0"/>
+      <stop offset="1" stop-color="#d9c2a8"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd9a0" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="space" cx="0.3" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#26304f"/>
+      <stop offset="1" stop-color="#0b0e1c"/>
+    </radialGradient>
+    <radialGradient id="planet" cx="0.35" cy="0.25" r="0.8">
+      <stop offset="0" stop-color="#6fa3b0"/>
+      <stop offset="0.6" stop-color="#2f5d73"/>
+      <stop offset="1" stop-color="#16293a"/>
+    </radialGradient>
+    <radialGradient id="shade" cx="0.3" cy="0.2" r="0.85">
+      <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.55"/>
+    </radialGradient>
+    <clipPath id="port"><circle cx="1072" cy="170" r="118"/></clipPath>
+    <clipPath id="world"><circle cx="1072" cy="318" r="170"/></clipPath>
+    <pattern id="panels" width="120" height="110" patternUnits="userSpaceOnUse">
+      <rect x="5" y="5" width="110" height="100" rx="22" fill="url(#quilt)"/>
+      <rect x="5" y="5" width="110" height="100" rx="22" fill="none" stroke="#b89f84" stroke-opacity="0.45" stroke-width="2"/>
+      <circle cx="33" cy="30" r="3.4" fill="#6a5a4a"/>
+      <circle cx="87" cy="30" r="3.4" fill="#6a5a4a"/>
+      <circle cx="33" cy="80" r="3.4" fill="#6a5a4a"/>
+      <circle cx="87" cy="80" r="3.4" fill="#6a5a4a"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="360" fill="url(#hull)"/>
+  <!-- Quilted wall -->
+  <rect x="0" y="-20" width="1280" height="400" fill="url(#panels)"/>
+  <rect x="0" y="0" width="1280" height="360" fill="#3a2a22" opacity="0.08"/>
+  <circle cx="150" cy="60" r="150" fill="url(#lamp)"/>
+  <circle cx="760" cy="40" r="130" fill="url(#lamp)"/>
+  <circle cx="150" cy="60" r="16" fill="#fff1d6"/>
+  <circle cx="760" cy="40" r="14" fill="#fff1d6"/>
+
+  <!-- Porthole onto the planet -->
+  <circle cx="1072" cy="170" r="150" fill="#e3c7a1"/>
+  <circle cx="1072" cy="170" r="150" fill="none" stroke="#c9ad8a" stroke-width="3"/>
+  <circle cx="1072" cy="170" r="128" fill="#b8bcc2"/>
+  <circle cx="1072" cy="170" r="128" fill="none" stroke="#8a8f98" stroke-width="3"/>
+  <g clip-path="url(#port)">
+    <rect x="950" y="50" width="250" height="250" fill="url(#space)"/>
+    <g class="twinkle" fill="#fff4dc">
+      <circle cx="990" cy="92" r="1.8"/><circle cx="1040" cy="72" r="1.3"/><circle cx="1122" cy="88" r="1.6"/>
+      <circle cx="1160" cy="130" r="1.2"/><circle cx="1010" cy="140" r="1.1"/><circle cx="1090" cy="118" r="1.4"/>
+    </g>
+    <circle cx="1072" cy="318" r="180" fill="#f2a07b" opacity="0.35"/>
+    <circle cx="1072" cy="318" r="170" fill="url(#planet)"/>
+    <g clip-path="url(#world)">
+      <g class="spin">
+        <path d="M880 210 C960 190 1010 230 1090 205 S1230 190 1270 212 L1270 232 C1200 216 1150 236 1080 226 S950 214 880 232 Z" fill="#d9a07a" opacity="0.85"/>
+        <path d="M900 250 C990 236 1060 266 1140 246 S1240 244 1270 256 L1270 268 C1210 262 1150 276 1090 266 S960 252 900 262 Z" fill="#f4ead8" opacity="0.75"/>
+        <path d="M1072 148 C1110 170 1150 160 1190 176 L1196 190 C1150 182 1110 190 1066 168 Z" fill="#f4ead8" opacity="0.6"/>
+        <path d="M950 170 C990 160 1020 176 1050 168 L1054 180 C1020 188 990 176 946 184 Z" fill="#c9905f" opacity="0.8"/>
+        <path d="M1072 488 C1030 470 990 480 950 466 L946 452 C990 460 1030 452 1076 474 Z" fill="#f4ead8" opacity="0.6"/>
+        <path d="M1264 330 C1250 370 1262 410 1248 450 L1234 452 C1244 410 1236 370 1250 326 Z" fill="#d9a07a" opacity="0.7"/>
+      </g>
+      <circle cx="1072" cy="318" r="170" fill="url(#shade)"/>
+    </g>
+    <ellipse cx="1030" cy="112" rx="64" ry="26" fill="#fff" opacity="0.08" transform="rotate(-24 1030 112)"/>
+  </g>
+
+  <!-- Title plaque -->
+  <rect x="64" y="92" width="680" height="176" rx="34" fill="#f4ead8" stroke="#e3c7a1" stroke-width="6"/>
+  <rect x="64" y="92" width="680" height="176" rx="34" fill="none" stroke="#3a2a22" stroke-opacity="0.12" stroke-width="2"/>
+  <text x="404" y="178" text-anchor="middle" font-family="ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="800" font-size="64" letter-spacing="4" fill="#8c3b3b">PLEASE HOLD</text>
+  <text x="404" y="222" text-anchor="middle" font-family="ui-rounded, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="600" font-size="22" fill="#3a2a22">A tiny zero-gravity workplace comedy</text>
+
+  <!-- On-hold indicator -->
+  <g transform="translate(212 290)">
+    <rect width="384" height="44" rx="22" fill="#1d2130" opacity="0.88"/>
+    <circle class="pulse" cx="26" cy="22" r="8" fill="#e07a5f"/>
+    <text x="44" y="28" font-family="ui-rounded, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="15" letter-spacing="1.5" fill="#fff4dc">ON HOLD · ♪ elevator music</text>
+    <g fill="#d9a441">
+      <rect class="bar" x="340" y="12" width="6" height="20" rx="3"/>
+      <rect class="bar b2" x="350" y="12" width="6" height="20" rx="3"/>
+      <rect class="bar b3" x="360" y="12" width="6" height="20" rx="3"/>
+      <rect class="bar b4" x="370" y="12" width="6" height="20" rx="3"/>
+    </g>
+  </g>
+
+  <!-- The attendant drifting past with a cushion -->
+  <g class="drift">
+    <g transform="translate(800 196)">
+      <g class="tumble">
+        <ellipse cx="4" cy="92" rx="34" ry="8" fill="#3a2a22" opacity="0.14"/>
+        <rect x="-14" y="30" width="12" height="44" rx="6" fill="#2f3446" transform="rotate(12 -8 30)"/>
+        <rect x="4" y="30" width="12" height="44" rx="6" fill="#2f3446" transform="rotate(-6 10 30)"/>
+        <rect x="-26" y="-20" width="52" height="64" rx="24" fill="#8c3b3b"/>
+        <rect x="-26" y="14" width="52" height="7" fill="#e8c07a"/>
+        <rect x="-44" y="-12" width="12" height="40" rx="6" fill="#8c3b3b" transform="rotate(38 -38 -12)"/>
+        <circle cx="0" cy="-40" r="21" fill="#e6b89a"/>
+        <circle cx="-7" cy="-42" r="2.6" fill="#2a2020"/>
+        <circle cx="7" cy="-42" r="2.6" fill="#2a2020"/>
+        <path d="M-6 -32 Q0 -28 6 -32" stroke="#2a2020" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="-15" y="-72" width="30" height="16" rx="4" fill="#8c3b3b" transform="rotate(-8 0 -64)"/>
+        <rect x="-15" y="-60" width="30" height="4" fill="#e8c07a" transform="rotate(-8 0 -64)"/>
+        <rect x="20" y="-18" width="12" height="44" rx="6" fill="#8c3b3b" transform="rotate(-62 26 -18)"/>
+        <g class="cushion">
+          <rect x="52" y="-44" width="46" height="42" rx="12" fill="#e07a5f"/>
+          <circle cx="75" cy="-23" r="3" fill="#6a5a4a"/>
+        </g>
+        <circle cx="54" cy="-26" r="7" fill="#e6b89a"/>
+      </g>
+    </g>
+  </g>
+</svg>

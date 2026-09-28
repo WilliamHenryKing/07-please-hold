@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { SPINNER_HUB, SPINNER_THICKNESS } from "../game/constants";
 import type { RailDef, RoomDef, SlotDef } from "../game/types";
 import { mat, PAL } from "./palette";
+import { railFlange, sofaModel } from "./props";
 import { BACK_Z } from "./roomShell";
 import { surfaces } from "./surfaces";
 
@@ -36,10 +37,14 @@ function rail(def: RailDef) {
   g.add(bar, grip);
   for (const end of [a, b]) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.42, 16), lib.brass);
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, 20), lib.brass);
-    foot.rotation.x = Math.PI / 2;
-    foot.position.set(end.x, end.y, BACK_Z + 0.02);
-    g.add(foot);
+    const flange = railFlange(BACK_Z + 0.02);
+    flange.position.set(end.x, end.y, 0);
+    // A collar where the stand-off meets the bar.
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.02, 10, 24), lib.brass);
+    collar.position.set(end.x, end.y, RAIL_Z - 0.09);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.08, 20, 12), lib.brass);
+    cap.position.copy(end).addScaledVector(dir, 0.02);
+    g.add(flange, collar, cap);
     post.rotation.x = Math.PI / 2;
     post.position.set(end.x, end.y, BACK_Z + 0.21);
     g.add(post);
@@ -73,11 +78,7 @@ function furniture(slot: SlotDef, room: RoomDef) {
   const lib = surfaces();
   const sofa = lib.fabric(PAL.sofa);
   if (slot.id === "sofa") {
-    const base = floor - slot.pos.y;
-    add(g, box(2.2, 0.85, 1.1), sofa, 0, base + 0.43, z);
-    add(g, box(2.2, 1.7, 0.4), sofa, 0, base + 0.85, BACK_Z + 0.35);
-    add(g, box(0.35, 1.25, 1.1), sofa, -1.05, base + 0.62, z);
-    add(g, box(0.35, 1.25, 1.1), sofa, 1.05, base + 0.62, z);
+    g.add(sofaModel(PAL.sofa, floor - slot.pos.y, BACK_Z + 0.2, z + 0.55));
   } else if (slot.id === "table") {
     add(g, box(1.6, 0.14, 1), PAL.table, 0, -0.45, z);
     const leg = slot.pos.y - 0.45 - floor;

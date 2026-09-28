@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import type { RoomDef } from "../game/types";
 import { mat, PAL } from "./palette";
 import { skyMaterial } from "./planet";
+import { sconceModel } from "./props";
 import { surfaces } from "./surfaces";
 
 export const BACK_Z = -1.1;
@@ -246,18 +247,10 @@ function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"
 }
 
 function lamps(list: [number, number][], group: THREE.Group) {
-  const lib = surfaces();
   for (const [x, y] of list) {
-    const bulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-      lib.bulb,
-    );
-    bulb.rotation.x = Math.PI / 2;
-    bulb.position.set(x, y, BACK_Z + 0.2);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.12, 28), lib.brass);
-    base.rotation.x = Math.PI / 2;
-    base.position.set(x, y, BACK_Z + 0.16);
-    group.add(bulb, base);
+    const sconce = sconceModel(BACK_Z + 0.08);
+    sconce.position.set(x, y, 0);
+    group.add(sconce);
     // Each glowing lamp is a real light (candela, inverse-square falloff).
     const light = new THREE.PointLight(0xffc98a, 16, 0, 2);
     light.position.set(x, y, BACK_Z + 0.55);

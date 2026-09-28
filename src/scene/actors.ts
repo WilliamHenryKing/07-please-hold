@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { Item, ItemKind } from "../game/types";
 import { mat, PAL } from "./palette";
+import { cushionModel } from "./props";
 import { surfaces } from "./surfaces";
 
 function part(geo: THREE.BufferGeometry, look: number | THREE.Material, rough = 0.8, metal = 0) {
@@ -14,10 +15,7 @@ const rbox = (w: number, h: number, d: number, r: number) => new RoundedBoxGeome
 
 function cushion() {
   const g = new THREE.Group();
-  const pad = part(rbox(0.66, 0.6, 0.3, 0.13), surfaces().fabric(PAL.cushion));
-  const tuft = part(new THREE.SphereGeometry(0.04, 8, 6), PAL.button);
-  tuft.position.z = 0.15;
-  g.add(pad, tuft);
+  g.add(cushionModel(PAL.cushion));
   return { g, slosh: null };
 }
 

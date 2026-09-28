@@ -26,6 +26,7 @@ function RoomBanner({ index, name, reduced }: { index: number; name: string; red
   return (
     <div
       ref={el}
+      data-room-banner
       aria-hidden="true"
       className="pointer-events-none fixed inset-x-0 top-[44%] z-10 sm:top-[40%] text-center opacity-0"
     >

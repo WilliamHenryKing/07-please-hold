@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { Item, ItemKind, Player } from "../game/types";
 import { mat, PAL } from "./palette";
+import { surfaces } from "./surfaces";
 
-function part(geo: THREE.BufferGeometry, color: number, rough = 0.8, metal = 0) {
-  const m = new THREE.Mesh(geo, mat(color, rough, metal));
+function part(geo: THREE.BufferGeometry, look: number | THREE.Material, rough = 0.8, metal = 0) {
+  const m = new THREE.Mesh(geo, typeof look === "number" ? mat(look, rough, metal) : look);
   m.castShadow = true;
   return m;
 }
@@ -22,16 +23,29 @@ export class AttendantView {
   private inner = new THREE.Group();
 
   constructor() {
-    const torso = part(new THREE.CapsuleGeometry(0.25, 0.32, 6, 16), PAL.uniform);
-    const belt = part(new THREE.TorusGeometry(0.25, 0.04, 8, 24), PAL.uniformTrim, 0.4, 0.6);
+    const lib = surfaces();
+    const wool = lib.cloth(PAL.uniform);
+    const torso = part(new THREE.CapsuleGeometry(0.25, 0.32, 8, 24), wool);
+    const belt = part(new THREE.TorusGeometry(0.25, 0.04, 10, 32), lib.brass);
+    // Braided collar in the trim colour, where the tunic meets the neck.
+    const collar = part(new THREE.TorusGeometry(0.16, 0.035, 10, 32), lib.cloth(PAL.uniformTrim));
+    collar.rotation.x = Math.PI / 2;
+    collar.position.y = 0.3;
+    this.body.add(collar);
+    // Brass tunic buttons down the front.
+    for (const by of [0.2, 0.08]) {
+      const button = part(new THREE.SphereGeometry(0.025, 10, 8), lib.brass);
+      button.position.set(0, by, 0.245);
+      this.body.add(button);
+    }
     belt.rotation.x = Math.PI / 2;
     belt.position.y = -0.06;
     const head = part(new THREE.SphereGeometry(0.2, 20, 14), PAL.skin);
     head.position.y = 0.46;
-    const hat = part(new THREE.CylinderGeometry(0.15, 0.15, 0.12, 20), PAL.uniform);
+    const hat = part(new THREE.CylinderGeometry(0.15, 0.15, 0.12, 28), wool);
     hat.position.set(0.02, 0.64, 0);
     hat.rotation.z = -0.15;
-    const band = part(new THREE.TorusGeometry(0.15, 0.025, 6, 20), PAL.uniformTrim, 0.4, 0.6);
+    const band = part(new THREE.TorusGeometry(0.15, 0.025, 8, 28), lib.brass);
     band.rotation.x = Math.PI / 2;
     band.position.copy(hat.position).y -= 0.04;
     for (const side of [-1, 1]) {
@@ -42,7 +56,7 @@ export class AttendantView {
     this.body.add(torso, belt, head, hat, band);
 
     const arm = () => {
-      const a = part(new THREE.CapsuleGeometry(0.07, 0.34, 4, 10), PAL.uniform);
+      const a = part(new THREE.CapsuleGeometry(0.07, 0.34, 6, 14), wool);
       a.position.y = 0.22;
       const hand = part(new THREE.SphereGeometry(0.08, 10, 8), PAL.skin);
       hand.position.y = 0.44;
@@ -54,8 +68,9 @@ export class AttendantView {
     this.reachArm.position.set(0.18, 0.12, 0.12);
     this.idleArm.add(arm());
     this.idleArm.position.set(-0.18, 0.12, -0.08);
+    const trousers = lib.cloth(0x2f3446);
     for (const side of [-1, 1]) {
-      const leg = part(new THREE.CapsuleGeometry(0.09, 0.36, 4, 10), 0x2f3446);
+      const leg = part(new THREE.CapsuleGeometry(0.09, 0.36, 6, 14), trousers);
       leg.position.set(side * 0.1, -0.24, 0);
       this.legs.add(leg);
     }
@@ -108,7 +123,7 @@ const rbox = (w: number, h: number, d: number, r: number) => new RoundedBoxGeome
 
 function cushion() {
   const g = new THREE.Group();
-  const pad = part(rbox(0.66, 0.6, 0.3, 0.13), PAL.cushion, 0.95);
+  const pad = part(rbox(0.66, 0.6, 0.3, 0.13), surfaces().fabric(PAL.cushion));
   const tuft = part(new THREE.SphereGeometry(0.04, 8, 6), PAL.button);
   tuft.position.z = 0.15;
   g.add(pad, tuft);
@@ -164,7 +179,7 @@ function flask() {
     0.5,
   );
   cap.position.y = 0.24;
-  const knob = part(new THREE.SphereGeometry(0.05, 10, 8), PAL.brass, 0.3, 0.8);
+  const knob = part(new THREE.SphereGeometry(0.05, 14, 10), surfaces().brass);
   knob.position.y = 0.42;
   const bottom = part(new THREE.CylinderGeometry(0.19, 0.19, 0.04, 20), PAL.flask, 0.5);
   bottom.position.y = -0.24;

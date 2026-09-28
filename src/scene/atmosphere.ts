@@ -17,6 +17,22 @@ function blobTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+/** A soft round sprite, so dust motes read as specks of light rather than square pixels. */
+function moteTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const x = c.getContext("2d");
+  if (x) {
+    const g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.4, "rgba(255,255,255,0.45)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g;
+    x.fillRect(0, 0, 32, 32);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
 const DUST = 90;
 const TRAIL = 36;
 
@@ -56,7 +72,8 @@ export class Atmosphere {
       geo,
       new THREE.PointsMaterial({
         color: 0xffe2b0,
-        size: 0.05,
+        map: moteTexture(),
+        size: 0.06,
         transparent: true,
         opacity: 0.55,
         depthWrite: false,

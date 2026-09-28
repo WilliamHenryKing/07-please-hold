@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import type { RoomDef } from "../game/types";
 import { mat, PAL } from "./palette";
 import { skyMaterial } from "./planet";
+import { surfaces } from "./surfaces";
 
 export const BACK_Z = -1.1;
 const FRONT_Z = 0.9;
@@ -44,26 +45,15 @@ export const DRESSING: Record<string, { windows: Porthole[]; lamps: [number, num
 
 const panelGeo = new RoundedBoxGeometry(1, 1, 0.24, 3, 0.1);
 const quiltGeo = new RoundedBoxGeometry(1, 1, 0.42, 4, 0.17);
-const tuftGeo = new THREE.SphereGeometry(0.05, 8, 6);
-const QUILT_FRONT = BACK_Z + 0.21;
-
-function glowTexture() {
-  const c = document.createElement("canvas");
-  c.width = c.height = 128;
-  const x = c.getContext("2d");
-  if (x) {
-    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
-    g.addColorStop(0, "rgba(255,214,150,0.85)");
-    g.addColorStop(0.35, "rgba(255,190,120,0.35)");
-    g.addColorStop(1, "rgba(255,170,100,0)");
-    x.fillStyle = g;
-    x.fillRect(0, 0, 128, 128);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-const glowTex = typeof document === "undefined" ? null : glowTexture();
+const buttonGeo = new THREE.SphereGeometry(0.055, 14, 10);
+/** Button positions on a panel face (UV), matching the baked tufting in the texture. */
+const BUTTONS: [number, number][] = [
+  [0.28, 0.28],
+  [0.72, 0.28],
+  [0.28, 0.72],
+  [0.72, 0.72],
+  [0.5, 0.5],
+];
 
 export interface Shell {
   group: THREE.Group;
@@ -92,33 +82,51 @@ function backWall(room: RoomDef, windows: Porthole[], group: THREE.Group) {
       const blocked = windows.some((w) => Math.hypot(x - w.x, y - w.y) < w.r + 0.45);
       if (!blocked) cells.push({ x, y });
     }
-  const panels = instanced(
-    quiltGeo,
-    new THREE.MeshStandardMaterial({ roughness: 0.92 }),
-    cells.length,
-  );
-  const tufts = instanced(tuftGeo, mat(PAL.button, 0.6), cells.length * 4);
+  const lib = surfaces();
+  const panels = instanced(quiltGeo, lib.quilt, cells.length);
+  panels.castShadow = true;
+  const buttons = instanced(buttonGeo, lib.button, cells.length * BUTTONS.length);
   const m = new THREE.Matrix4();
   const c = new THREE.Color();
+  const q = new THREE.Quaternion();
+  const hsl = { h: 0, s: 0, l: 0 };
+  // Seeded jitter so every panel differs a little in tone and puff, but the room is stable.
+  const rand = (n: number, k: number) => {
+    const x = Math.sin(n * 127.1 + k * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
   cells.forEach((cell, n) => {
+    const w = cw - 0.08;
+    const h = ch - 0.08;
+    const puff = 0.85 + rand(n, 1) * 0.3;
     m.compose(
-      new THREE.Vector3(cell.x, cell.y, BACK_Z),
-      new THREE.Quaternion(),
-      new THREE.Vector3(cw - 0.08, ch - 0.08, 1),
+      new THREE.Vector3(cell.x, cell.y, BACK_Z - (1 - puff) * 0.21),
+      q,
+      new THREE.Vector3(w, h, puff),
     );
     panels.setMatrixAt(n, m);
     const accent = (n * 7) % 11 === 0;
     const list = accent ? PAL.panelAccent : PAL.panels;
-    panels.setColorAt(n, c.setHex(list[(n * 5) % list.length] ?? PAL.panels[0]));
-    for (let k = 0; k < 4; k++) {
-      const tx = cell.x + (k % 2 ? 0.22 : -0.22) * cw;
-      const ty = cell.y + (k < 2 ? 0.22 : -0.22) * ch;
-      m.makeTranslation(tx, ty, QUILT_FRONT - 0.015);
-      tufts.setMatrixAt(n * 4 + k, m);
-    }
+    c.setHex(list[(n * 5) % list.length] ?? PAL.panels[0]);
+    c.getHSL(hsl);
+    c.setHSL(
+      hsl.h + (rand(n, 2) - 0.5) * 0.02,
+      hsl.s * (0.9 + rand(n, 3) * 0.2),
+      hsl.l * (0.94 + rand(n, 4) * 0.1),
+    );
+    panels.setColorAt(n, c);
+    const front = BACK_Z + 0.21 * puff - (1 - puff) * 0.21;
+    BUTTONS.forEach(([u, v], k) => {
+      m.compose(
+        new THREE.Vector3(cell.x + (u - 0.5) * w, cell.y + (v - 0.5) * h, front - 0.035),
+        q,
+        new THREE.Vector3(1, 1, 0.55),
+      );
+      buttons.setMatrixAt(n * BUTTONS.length + k, m);
+    });
   });
   // The back wall sits behind everything; it receives shadows so the key light reads depth.
-  group.add(panels, tufts);
+  group.add(panels, buttons);
   // A dark hull plane behind the wall fills the gaps around portholes.
   const hull = new THREE.Mesh(
     new THREE.PlaneGeometry(room.width + 1, room.height + 1),
@@ -132,17 +140,14 @@ function portholes(windows: Porthole[], group: THREE.Group) {
   for (const w of windows) {
     const glass = new THREE.Mesh(
       new THREE.CircleGeometry(w.r, 48),
-      skyMaterial(new THREE.Vector2(w.x * 0.25, w.y * 0.25), w.r * 0.5, 1),
+      skyMaterial(new THREE.Vector2(w.x * 0.06, w.y * 0.08 - 0.55), w.r * 0.5, 1),
     );
     glass.position.set(w.x, w.y, BACK_Z - 0.05);
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(w.r + 0.06, 0.12, 12, 48),
-      mat(PAL.trim, 0.35, 0.7),
-    );
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(w.r + 0.06, 0.12, 12, 48), surfaces().steel);
     rim.position.set(w.x, w.y, BACK_Z + 0.02);
     const pad = new THREE.Mesh(
       new THREE.TorusGeometry(w.r + 0.3, 0.16, 10, 48),
-      mat(PAL.panels[1], 0.9),
+      surfaces().pad(PAL.panels[1]),
     );
     pad.position.set(w.x, w.y, BACK_Z - 0.02);
     pad.receiveShadow = true;
@@ -174,7 +179,7 @@ function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"
       { x: hw + t / 2, y, w: t, h, nx: 1, ny: 0 },
     );
   }
-  const pads = instanced(panelGeo, mat(PAL.panels[2], 0.9), segs.length);
+  const pads = instanced(panelGeo, surfaces().pad(PAL.panels[2]), segs.length);
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const squash = segs.map(() => 0);
@@ -197,7 +202,7 @@ function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"
   });
   group.add(pads);
   // Brass trim where the padding meets the front edge.
-  const trimMat = mat(PAL.brass, 0.35, 0.8);
+  const trimMat = surfaces().brass;
   const outline = [
     [-hw - t, -hh - t, hw + t, -hh - t],
     [-hw - t, hh + t, hw + t, hh + t],
@@ -241,39 +246,22 @@ function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"
 }
 
 function lamps(list: [number, number][], group: THREE.Group) {
-  const shade = mat(PAL.lampGlow, 0.4, 0, 1.6);
+  const lib = surfaces();
   for (const [x, y] of list) {
     const bulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.26, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-      shade,
+      new THREE.SphereGeometry(0.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      lib.bulb,
     );
     bulb.rotation.x = Math.PI / 2;
-    bulb.position.set(x, y, BACK_Z + 0.12);
-    const base = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.32, 0.32, 0.06, 20),
-      mat(PAL.brass, 0.35, 0.8),
-    );
+    bulb.position.set(x, y, BACK_Z + 0.2);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.12, 28), lib.brass);
     base.rotation.x = Math.PI / 2;
-    base.position.set(x, y, BACK_Z + 0.12);
+    base.position.set(x, y, BACK_Z + 0.16);
     group.add(bulb, base);
-    // A warm pool of light spilling over the quilting around each lamp.
-    const pool = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.6, 3.6),
-      new THREE.MeshBasicMaterial({
-        map: glowTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        opacity: 0.55,
-      }),
-    );
-    pool.position.set(x, y, QUILT_FRONT + 0.02);
-    group.add(pool);
-  }
-  for (const [x, y] of list.slice(0, 2)) {
-    const glow = new THREE.PointLight(PAL.lampGlow, 5, 7, 1.6);
-    glow.position.set(x, y, BACK_Z + 0.9);
-    group.add(glow);
+    // Each glowing lamp is a real light (candela, inverse-square falloff).
+    const light = new THREE.PointLight(0xffc98a, 16, 0, 2);
+    light.position.set(x, y, BACK_Z + 0.55);
+    group.add(light);
   }
 }
 

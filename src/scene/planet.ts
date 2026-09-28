@@ -1,14 +1,32 @@
 import * as THREE from "three";
+import { tex } from "./assets";
 
 /**
- * The view through every porthole: stars and a huge, slowly turning planet with a warm limb.
- * Each window samples a different part of the same sky via `uOffset`, so portholes agree.
+ * The view through every porthole: a star field and Earth, from NASA's Blue Marble (day),
+ * cloud cover and Black Marble (night lights), lit by one sun, with an atmosphere rim.
+ * Every window samples the same sky at its own offset, so the portholes agree with each other.
  */
 export const skyUniforms = {
   uTime: { value: 0 },
   /** Eye offset from the room centre; each window shifts its view by it for parallax. */
   uParallax: { value: new THREE.Vector2() },
 };
+
+let earth: { day: THREE.Texture; night: THREE.Texture; clouds: THREE.Texture } | null = null;
+function earthTextures() {
+  if (!earth) {
+    earth = {
+      day: tex("planet/earth_day_2k.webp", true),
+      night: tex("planet/earth_night_2k.webp", true),
+      clouds: tex("planet/earth_clouds_2k.webp", false),
+    };
+    for (const t of Object.values(earth)) {
+      t.wrapT = THREE.ClampToEdgeWrapping;
+      t.anisotropy = 4;
+    }
+  }
+  return earth;
+}
 
 const vertex = /* glsl */ `
   varying vec2 vUv;
@@ -24,66 +42,90 @@ const fragment = /* glsl */ `
   uniform vec2 uParallax;
   uniform float uDepth;
   uniform float uScale;
+  uniform sampler2D uDay;
+  uniform sampler2D uNight;
+  uniform sampler2D uClouds;
   varying vec2 vUv;
 
+  const float PI = 3.14159265;
+
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float noise(vec2 p) {
-    vec2 i = floor(p), f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+
+  // Round, soft stars: one candidate per cell at a random offset, most cells empty.
+  vec3 stars(vec2 p) {
+    vec2 cell = floor(p);
+    float h = hash(cell);
+    if (h < 0.965) return vec3(0.0);
+    vec2 centre = cell + vec2(hash(cell + 3.1), hash(cell + 7.7));
+    float d = length(p - centre);
+    float size = 0.06 + 0.1 * hash(cell + 1.3);
+    float glow = smoothstep(size, 0.0, d);
+    float tw = 0.75 + 0.25 * sin(uTime * 1.3 + h * 40.0);
+    vec3 tint = mix(vec3(1.0, 0.86, 0.72), vec3(0.78, 0.86, 1.0), hash(cell + 9.2));
+    return tint * glow * tw * (0.6 + 2.4 * pow(hash(cell + 5.5), 4.0));
   }
-  float fbm(vec2 p) {
-    float v = 0.0, a = 0.5;
-    for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
-    return v;
-  }
+
+  mat3 rotY(float a) { float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
+  mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
 
   void main() {
     vec2 p = uOffset - uParallax * uDepth + (vUv - 0.5) * uScale;
-    // Space: deep blue with sparse stars that drift very slowly.
-    vec2 sp = p * 40.0 * max(1.0, uScale * 0.5) + vec2(uTime * 0.05, 0.0);
-    float star = step(0.992, hash(floor(sp))) * (0.6 + 0.4 * sin(uTime * 1.5 + hash(floor(sp)) * 6.28));
-    vec3 col = vec3(0.04, 0.05, 0.11) + star * vec3(1.0, 0.95, 0.85);
+    vec3 col = vec3(0.0015, 0.002, 0.005) + stars(p * 38.0 * max(1.0, uScale * 0.5)) * 1.4;
 
-    // Planet: a vast disc below and to the right; bands rotate slowly around it.
-    vec2 centre = vec2(1.4, -3.2);
-    float r = 3.6;
-    float d = length(p - centre);
-    if (d < r) {
-      vec2 q = (p - centre) / r;
-      float z = sqrt(max(0.0, 1.0 - dot(q, q)));
-      vec3 n = vec3(q, z);
-      float lon = atan(q.x, z) + uTime * 0.012;
-      float lat = q.y;
-      float bands = fbm(vec2(lon * 3.0, lat * 9.0)) * 0.6 + 0.4 * sin(lat * 18.0 + fbm(vec2(lon * 2.0, lat * 4.0)) * 4.0);
-      vec3 ocean = mix(vec3(0.16, 0.32, 0.45), vec3(0.3, 0.52, 0.58), bands);
-      float land = smoothstep(0.55, 0.62, fbm(vec2(lon * 2.2 + 3.0, lat * 3.0)));
-      vec3 surf = mix(ocean, vec3(0.78, 0.62, 0.42), land);
-      float cloud = smoothstep(0.55, 0.8, fbm(vec2(lon * 4.0 - uTime * 0.01, lat * 6.0)));
-      surf = mix(surf, vec3(0.96, 0.93, 0.88), cloud * 0.8);
-      float light = clamp(dot(n, normalize(vec3(-0.6, 0.7, 0.5))), 0.0, 1.0);
-      col = surf * (0.08 + 1.1 * light);
-      col += vec3(1.0, 0.6, 0.35) * pow(1.0 - z, 3.0) * 0.8 * (0.3 + light);
+    // Earth sits below every porthole, close enough that its limb visibly curves.
+    vec2 centre = vec2(0.6, -2.6);
+    float r = 2.2;
+    vec2 q = (p - centre) / r;
+    float d2 = dot(q, q);
+    vec3 L = normalize(vec3(-0.55, 0.62, 0.56));
+    if (d2 < 1.0) {
+      vec3 n = vec3(q, sqrt(1.0 - d2));
+      // Axial tilt, then a slow spin (one turn every ~26 minutes of play).
+      vec3 w = rotY(uTime * 0.004 + 2.2) * rotX(0.41) * n;
+      vec2 uv = vec2(atan(w.x, w.z) / (2.0 * PI) + 0.5, asin(clamp(w.y, -1.0, 1.0)) / PI + 0.5);
+      vec3 day = texture2D(uDay, uv).rgb;
+      vec3 night = texture2D(uNight, uv).rgb;
+      float cloud = texture2D(uClouds, uv + vec2(uTime * 0.0006, 0.0)).r;
+      float ndl = dot(n, L);
+      float lit = smoothstep(-0.08, 0.25, ndl);
+      // Oceans: blue-dominant, darker than land; they get a sun glint.
+      float ocean = smoothstep(0.02, 0.12, day.b - max(day.r, day.g) * 0.9);
+      vec3 V = vec3(0.0, 0.0, 1.0);
+      float glint = pow(max(dot(reflect(-L, n), V), 0.0), 60.0) * ocean * lit;
+      vec3 surface = mix(day, vec3(0.96), cloud * 0.85);
+      vec3 sunlit = surface * max(ndl, 0.0) * 3.2 + glint * vec3(4.0, 3.4, 2.6);
+      vec3 cities = night * (1.0 - lit) * (1.0 - cloud * 0.7) * vec3(1.6, 1.1, 0.6) * 0.9;
+      col = sunlit + cities;
+      // Atmosphere: Rayleigh-blue limb, warmed where the terminator crosses it.
+      float limb = pow(1.0 - n.z, 2.6);
+      vec3 sky = mix(vec3(1.0, 0.55, 0.3), vec3(0.35, 0.6, 1.0), smoothstep(-0.1, 0.35, ndl));
+      col += sky * limb * (0.25 + 1.6 * max(ndl + 0.15, 0.0));
+      col *= 1.0 - 0.35 * smoothstep(0.96, 1.0, sqrt(d2)) * (1.0 - lit);
     } else {
-      // Atmosphere halo, warm on the sunward side.
-      float halo = exp(-(d - r) * 7.0);
-      col += vec3(0.95, 0.62, 0.4) * halo * 0.55;
+      // Outer glow of the atmosphere above the limb, brightest toward the sun.
+      float h = sqrt(d2) - 1.0;
+      vec2 toward = normalize(q);
+      float sunward = max(dot(toward, normalize(L.xy)), 0.0);
+      float glow = exp(-h * 38.0) * (0.25 + 1.3 * sunward);
+      col += vec3(0.32, 0.56, 1.0) * glow;
     }
     gl_FragColor = vec4(col, 1.0);
-    #include <colorspace_fragment>
   }
 `;
 
 export function skyMaterial(offset: THREE.Vector2, scale: number, depth = 0.3) {
+  const e = earthTextures();
   return new THREE.ShaderMaterial({
     uniforms: {
       ...skyUniforms,
       uOffset: { value: offset },
       uScale: { value: scale },
       uDepth: { value: depth },
+      uDay: { value: e.day },
+      uNight: { value: e.night },
+      uClouds: { value: e.clouds },
     },
     vertexShader: vertex,
     fragmentShader: fragment,
-    toneMapped: false,
   });
 }

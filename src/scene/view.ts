@@ -47,6 +47,7 @@ export class GameView {
       this.effects.mesh,
       this.atmosphere.group,
     );
+    this.stage.aoHidden.push(this.guides.group, this.effects.mesh, this.atmosphere.group);
   }
 
   private build(state: GameState) {

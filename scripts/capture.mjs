@@ -31,9 +31,11 @@ for (const name of bookmarks) {
   });
   await page.goto(`${base}/?e2e${process.env.QUALITY ? `&quality=${process.env.QUALITY}` : ""}`);
   await page.waitForFunction(() => window.__VISUAL_TEST__?.ready, undefined, { timeout: 60_000 });
+  // The room title is transient UI; GSAP stretches it on slow software frames, so hide it.
+  await page.addStyleTag({ content: "[data-room-banner]{display:none!important}" });
   const posed = await page.evaluate((n) => window.__VISUAL_TEST__.setBookmark(n), name);
   // Let the room banner pass and held items settle, then freeze time for a stable frame.
-  await page.waitForTimeout(3600);
+  await page.waitForTimeout(5600);
   await page.evaluate(() => window.__VISUAL_TEST__.freeze(true));
   await page.evaluate(() => window.__VISUAL_TEST__.settle(6));
   const file = `${out}/${name}.png`;

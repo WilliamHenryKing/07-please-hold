@@ -4,6 +4,7 @@ import { SPINNER_HUB, SPINNER_THICKNESS } from "../game/constants";
 import type { RailDef, RoomDef, SlotDef } from "../game/types";
 import { mat, PAL } from "./palette";
 import { BACK_Z } from "./roomShell";
+import { surfaces } from "./surfaces";
 
 export interface Fixtures {
   group: THREE.Group;
@@ -22,14 +23,9 @@ function rail(def: RailDef) {
   const a = new THREE.Vector3(def.a.x, def.a.y, RAIL_Z);
   const b = new THREE.Vector3(def.b.x, def.b.y, RAIL_Z);
   const l = a.distanceTo(b);
-  const bar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, l, 12),
-    mat(PAL.brass, 0.3, 0.85),
-  );
-  const grip = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1, 0.1, l * 0.55, 12),
-    mat(PAL.grip, 0.7),
-  );
+  const lib = surfaces();
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, l, 24), lib.brass);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, l * 0.55, 24), lib.grip);
   const dir = b.clone().sub(a).normalize();
   const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
   for (const m of [bar, grip]) {
@@ -39,10 +35,11 @@ function rail(def: RailDef) {
   }
   g.add(bar, grip);
   for (const end of [a, b]) {
-    const post = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.05, 0.08, 0.42, 10),
-      mat(PAL.brass, 0.3, 0.85),
-    );
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.42, 16), lib.brass);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, 20), lib.brass);
+    foot.rotation.x = Math.PI / 2;
+    foot.position.set(end.x, end.y, BACK_Z + 0.02);
+    g.add(foot);
     post.rotation.x = Math.PI / 2;
     post.position.set(end.x, end.y, BACK_Z + 0.21);
     g.add(post);
@@ -55,12 +52,12 @@ const box = (w: number, h: number, d: number, r = 0.08) => new RoundedBoxGeometr
 function add(
   g: THREE.Group,
   geo: THREE.BufferGeometry,
-  color: number,
+  look: number | THREE.Material,
   x: number,
   y: number,
   z: number,
 ) {
-  const m = new THREE.Mesh(geo, mat(color, 0.85));
+  const m = new THREE.Mesh(geo, typeof look === "number" ? mat(look, 0.85) : look);
   m.position.set(x, y, z);
   m.castShadow = true;
   m.receiveShadow = true;
@@ -73,41 +70,52 @@ function furniture(slot: SlotDef, room: RoomDef) {
   const g = new THREE.Group();
   const floor = -room.height / 2;
   const z = -0.35;
+  const lib = surfaces();
+  const sofa = lib.fabric(PAL.sofa);
   if (slot.id === "sofa") {
     const base = floor - slot.pos.y;
-    add(g, box(2.2, 0.85, 1.1), PAL.sofa, 0, base + 0.43, z);
-    add(g, box(2.2, 1.7, 0.4), PAL.sofa, 0, base + 0.85, BACK_Z + 0.35);
-    add(g, box(0.35, 1.25, 1.1), PAL.sofa, -1.05, base + 0.62, z);
-    add(g, box(0.35, 1.25, 1.1), PAL.sofa, 1.05, base + 0.62, z);
+    add(g, box(2.2, 0.85, 1.1), sofa, 0, base + 0.43, z);
+    add(g, box(2.2, 1.7, 0.4), sofa, 0, base + 0.85, BACK_Z + 0.35);
+    add(g, box(0.35, 1.25, 1.1), sofa, -1.05, base + 0.62, z);
+    add(g, box(0.35, 1.25, 1.1), sofa, 1.05, base + 0.62, z);
   } else if (slot.id === "table") {
     add(g, box(1.6, 0.14, 1), PAL.table, 0, -0.45, z);
     const leg = slot.pos.y - 0.45 - floor;
-    add(g, new THREE.CylinderGeometry(0.1, 0.18, leg, 10), PAL.brass, 0, -0.45 - leg / 2, z);
+    add(g, new THREE.CylinderGeometry(0.1, 0.18, leg, 16), lib.brass, 0, -0.45 - leg / 2, z);
   } else if (slot.id === "lamp") {
     const top = room.height / 2 - slot.pos.y;
-    add(g, new THREE.CylinderGeometry(0.03, 0.03, top - 0.9, 6), PAL.trim, 0, (top + 0.9) / 2, z);
-    const shade = new THREE.Mesh(
-      new THREE.ConeGeometry(0.6, 0.5, 24, 1, true),
-      mat(PAL.lampGlow, 0.5, 0, 1.2),
-    );
-    shade.material.side = THREE.DoubleSide;
+    add(g, new THREE.CylinderGeometry(0.03, 0.03, top - 0.9, 8), lib.steel, 0, (top + 0.9) / 2, z);
+    const shadeMat = lib.cloth(0xf1e3c7);
+    shadeMat.side = THREE.DoubleSide;
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.5, 32, 1, true), shadeMat);
     shade.position.set(0, 0.95, z);
-    g.add(shade);
-    const light = new THREE.PointLight(PAL.lampGlow, 4, 4, 1.5);
-    light.position.set(0, 0.6, 0.3);
+    shade.castShadow = true;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 10), lib.bulb);
+    bulb.position.set(0, 0.78, z);
+    g.add(shade, bulb);
+    // The grow lamp is a real light, hanging just below its bulb.
+    const light = new THREE.PointLight(0xffc98a, 12, 0, 2);
+    light.position.set(0, 0.6, z + 0.2);
     g.add(light);
   } else if (slot.id === "guest") {
-    add(g, box(1.1, 0.4, 0.9), PAL.sofa, 0.1, floor - slot.pos.y + 0.25, z);
+    add(g, box(1.1, 0.4, 0.9), sofa, 0.1, floor - slot.pos.y + 0.25, z);
     add(
       g,
       new THREE.CapsuleGeometry(0.34, 0.6, 6, 12),
-      PAL.guest,
+      lib.cloth(PAL.guest),
       0.35,
       floor - slot.pos.y + 1.05,
       z,
     );
     add(g, new THREE.SphereGeometry(0.28, 16, 12), PAL.skin, 0.35, floor - slot.pos.y + 1.75, z);
-    const arm = add(g, new THREE.CapsuleGeometry(0.08, 0.5, 4, 8), PAL.guest, -0.05, 0.05, z + 0.2);
+    const arm = add(
+      g,
+      new THREE.CapsuleGeometry(0.08, 0.5, 4, 8),
+      lib.cloth(PAL.guest),
+      -0.05,
+      0.05,
+      z + 0.2,
+    );
     arm.rotation.z = Math.PI / 2.4;
   }
   g.position.set(slot.pos.x, slot.pos.y, 0);
@@ -119,20 +127,14 @@ function hatch(room: RoomDef) {
   if (!h) return { group: null, door: null };
   const g = new THREE.Group();
   const r = 0.75;
-  const frameMesh = new THREE.Mesh(
-    new THREE.TorusGeometry(r, 0.12, 12, 40),
-    mat(PAL.trim, 0.35, 0.8),
-  );
+  const frameMesh = new THREE.Mesh(new THREE.TorusGeometry(r, 0.12, 12, 40), surfaces().steel);
   const door = new THREE.Group();
   const disc = new THREE.Mesh(
     new THREE.CylinderGeometry(r - 0.05, r - 0.05, 0.1, 40),
-    mat(PAL.panelAccent[0], 0.6),
+    surfaces().pad(PAL.panelAccent[0]),
   );
   disc.rotation.x = Math.PI / 2;
-  const wheel = new THREE.Mesh(
-    new THREE.TorusGeometry(0.25, 0.04, 8, 24),
-    mat(PAL.brass, 0.3, 0.9),
-  );
+  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 8, 24), surfaces().brass);
   wheel.position.z = 0.08;
   door.add(disc, wheel);
   door.position.x = -r;
@@ -154,18 +156,26 @@ function spinner(room: RoomDef) {
   const s = room.spinner;
   if (!s) return null;
   const g = new THREE.Group();
-  add(g, box(s.reach * 2, SPINNER_THICKNESS * 2, 1.5, 0.12), PAL.panelAccent[0], 0, 0, -0.3);
+  const lib = surfaces();
+  add(
+    g,
+    box(s.reach * 2, SPINNER_THICKNESS * 2, 1.5, 0.12),
+    lib.pad(PAL.panelAccent[0]),
+    0,
+    0,
+    -0.3,
+  );
   const hub = add(
     g,
     new THREE.CylinderGeometry(SPINNER_HUB, SPINNER_HUB, 1.7, 24),
-    PAL.brass,
+    lib.brass,
     0,
     0,
     -0.3,
   );
   hub.rotation.x = Math.PI / 2;
   for (const x of [-s.reach * 0.55, s.reach * 0.55]) {
-    add(g, box(0.5, SPINNER_THICKNESS * 2 + 0.06, 1.52, 0.08), PAL.panels[1], x, 0, -0.3);
+    add(g, box(0.5, SPINNER_THICKNESS * 2 + 0.06, 1.52, 0.08), lib.pad(PAL.panels[1]), x, 0, -0.3);
   }
   g.position.set(s.centre.x, s.centre.y, 0);
   return g;

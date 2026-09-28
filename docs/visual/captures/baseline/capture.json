@@ -1,0 +1,73 @@
+{
+  "label": "baseline",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "date": "2026-09-28T08:57:04.336Z",
+  "shots": [
+    {
+      "name": "establishing-wide",
+      "file": "docs/visual/captures/baseline/establishing-wide.png",
+      "posed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1,
+        "mobile": false
+      }
+    },
+    {
+      "name": "hero",
+      "file": "docs/visual/captures/baseline/hero.png",
+      "posed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1,
+        "mobile": false
+      }
+    },
+    {
+      "name": "close-up",
+      "file": "docs/visual/captures/baseline/close-up.png",
+      "posed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1,
+        "mobile": false
+      }
+    },
+    {
+      "name": "grazing-material",
+      "file": "docs/visual/captures/baseline/grazing-material.png",
+      "posed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1,
+        "mobile": false
+      }
+    },
+    {
+      "name": "porthole",
+      "file": "docs/visual/captures/baseline/porthole.png",
+      "posed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1,
+        "mobile": false
+      }
+    },
+    {
+      "name": "phone-hero",
+      "file": "docs/visual/captures/baseline/phone-hero.png",
+      "posed": true,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "scale": 2,
+        "mobile": true
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import { App } from "./ui/App";
 import { bindInput } from "./ui/input";
 import { loadRecords, saveResults } from "./ui/records";
 import { HudStore, snapshot } from "./ui/store";
+import { installVisualTest } from "./visualTest";
 
 const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const coarse = window.matchMedia("(pointer: coarse)").matches;
@@ -94,11 +95,12 @@ if (root) {
 // Slow motion for recording the README capture on slow software renderers (?e2e only).
 const params = new URLSearchParams(window.location.search);
 const timeScale = params.has("e2e") ? Number(params.get("timescale") ?? 1) || 1 : 1;
+let frozen = false;
 let last = performance.now();
 let carry = 0;
 let first = true;
 function frame(now: number) {
-  const dt = Math.min(0.1, (now - last) / 1000) * timeScale;
+  const dt = frozen ? 0 : Math.min(0.1, (now - last) / 1000) * timeScale;
   last = now;
   input.poll();
   carry = advance(state, carry + dt);
@@ -123,10 +125,23 @@ function frame(now: number) {
   if (first) {
     first = false;
     layout();
-    requestAnimationFrame(() => worldReady());
+    requestAnimationFrame(() => {
+      worldReady();
+      if (visualTest) visualTest.ready = true;
+    });
   }
   requestAnimationFrame(frame);
 }
+const visualTest =
+  import.meta.env.DEV || params.has("e2e")
+    ? installVisualTest({
+        getState: () => state,
+        view,
+        setFrozen: (on) => {
+          frozen = on;
+        },
+      })
+    : null;
 layout();
 requestAnimationFrame(frame);
 

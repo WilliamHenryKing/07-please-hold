@@ -15,6 +15,12 @@ export class Stage {
   private target = new THREE.Vector3();
   private home = new THREE.Vector3();
   private shake = new THREE.Vector2();
+  /** Visual-review camera pose; null means normal gameplay framing. */
+  override: {
+    position: [number, number, number];
+    target: [number, number, number];
+    fov: number;
+  } | null = null;
   /** True when the view is turned a quarter for a portrait screen. */
   rolled = false;
   private raycaster = new THREE.Raycaster();
@@ -113,6 +119,19 @@ export class Stage {
 
   /** Spring the nudge back to rest. Call once per frame. */
   settle(dt: number) {
+    const o = this.override;
+    if (o) {
+      this.camera.up.set(0, 1, 0);
+      this.camera.fov = o.fov;
+      this.camera.position.set(...o.position);
+      this.camera.lookAt(...o.target);
+      this.camera.updateProjectionMatrix();
+      return;
+    }
+    if (this.camera.fov !== FOV) {
+      this.camera.fov = FOV;
+      this.resize();
+    }
     const k = Math.min(1, dt * 9);
     this.shake.multiplyScalar(1 - k);
     this.camera.position.set(this.home.x + this.shake.x, this.home.y + this.shake.y, this.home.z);

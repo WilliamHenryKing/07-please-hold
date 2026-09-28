@@ -38,7 +38,7 @@ Shipped assets total **5.46 MB**: textures 3.7 MB (WebP, 2K maximum, plus a 1.6 
   - A braided collar and brass buttons on the bellhop.
 - **Planet** (`src/scene/planet.ts`): NASA Blue Marble (day), cloud cover and Black Marble (night lights) on a ray-cast sphere, with a sun glint on the oceans, a Rayleigh limb warming at the terminator, an outer glow, round stars, and porthole parallax. Every porthole now looks toward the limb.
 - **Dust** renders as soft round sprites; effects, guides and dust are kept out of the AO buffer.
-- **README media** refreshed from the new look: `docs/readme/desktop.png` and `phone.png` via the capture hook, and `preview.gif` re-recorded.
+- **README media** refreshed from the new look: `docs/readme/desktop.png` and `phone.png` via the capture hook, and `preview.gif` re-recorded on the high tier from the room-1 run: 800 × 500, 57 frames, 7.9 s, 1.82 MB, about 7 fps because each SwiftShader frame is slow. It stores changed pixels only, with disposal 1 (keep previous), and I verified by decoding that the middle and last composited frames are complete.
 
 ## What I could not do, or did differently
 

@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { useRef, useSyncExternalStore } from "react";
 import { EndCard } from "./EndCard";
 import { ActionPad, type Controls, HintBar, MuteButton, RestartButton, TaskCard } from "./Hud";
+import { Guide, Title } from "./Opening";
 import { RoomCard } from "./RoomCard";
 import type { HudStore } from "./store";
 
@@ -50,12 +51,22 @@ export function App({
   reduced: boolean;
 }) {
   const hud = useSyncExternalStore(store.subscribe, store.get);
+  if (hud.opening !== "done")
+    return hud.opening === "title" ? <Title onBegin={controls.begin} /> : null;
   return (
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5">
       <h1 className="sr-only">PLEASE HOLD: a tiny zero-gravity workplace comedy</h1>
       <div className="flex items-start justify-between gap-2">
         <TaskCard hud={hud} />
         <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-start">
+          <button
+            className="guide-replay pointer-events-auto"
+            type="button"
+            aria-label="Replay the guide"
+            onClick={controls.replayGuide}
+          >
+            ?
+          </button>
           <RestartButton hud={hud} onRestart={controls.restart} />
           <MuteButton hud={hud} onToggle={controls.toggleMute} />
         </div>
@@ -70,7 +81,11 @@ export function App({
               reduced={reduced}
             />
           )}
-          <HintBar hint={hud.finished ? null : hud.hint} />
+          {hud.guide >= 0 && !hud.finished ? (
+            <Guide hud={hud} controls={controls} />
+          ) : (
+            <HintBar hint={hud.finished ? null : hud.hint} />
+          )}
         </div>
         {!hud.finished && <ActionPad hud={hud} controls={controls} />}
       </div>

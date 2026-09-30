@@ -7,6 +7,8 @@ import type { GameState, Stats } from "../game/types";
 
 /** What the HUD shows. Rebuilt every frame, but React only re-renders when it changes. */
 export interface HudSnapshot {
+  opening: "title" | "glide" | "done";
+  guide: number;
   roomIndex: number;
   roomCount: number;
   roomName: string;
@@ -35,6 +37,7 @@ export function snapshot(
   mode: InputMode,
   muted = false,
   records: Records = {},
+  onboarding: Pick<HudSnapshot, "opening" | "guide"> = { opening: "done", guide: -1 },
 ): HudSnapshot {
   const finished = state.phase === "done";
   const withBest = (r: RoomResult) => ({
@@ -44,6 +47,7 @@ export function snapshot(
   });
   const last = state.results.at(-1);
   return {
+    ...onboarding,
     roomIndex: state.roomIndex,
     roomCount: ROOMS.length,
     roomName: state.room.name,

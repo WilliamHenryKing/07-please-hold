@@ -220,9 +220,10 @@ export class Stage {
     }
     if (this.camera.fov !== FOV) {
       this.camera.fov = FOV;
-      this.resize();
+      this.camera.updateProjectionMatrix();
     }
     const k = Math.min(1, dt * 9);
+    this.camera.up.set(this.rolled ? 1 : 0, this.rolled ? 0 : 1, 0);
     this.shake.multiplyScalar(1 - k);
     this.camera.position.set(this.home.x + this.shake.x, this.home.y + this.shake.y, this.home.z);
     this.camera.lookAt(this.target.x + this.shake.x * 0.5, this.target.y + this.shake.y * 0.5, 0);

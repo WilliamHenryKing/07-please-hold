@@ -10,6 +10,7 @@ import { AttendantView } from "./attendant";
 import { Effects } from "./effects";
 import { buildFixtures, type Fixtures } from "./fixtures";
 import { Guides } from "./guides";
+import { Opening } from "./opening";
 import { skyUniforms } from "./planet";
 import { buildShell, type Shell } from "./roomShell";
 import { Stage } from "./stage";
@@ -26,6 +27,7 @@ function dispose(obj: THREE.Object3D) {
 
 /** Everything drawn: builds a room's meshes, mirrors game state each frame, plays effects. */
 export class GameView {
+  readonly opening = new Opening();
   readonly stage: Stage;
   private roomGroup = new THREE.Group();
   private fixtures: Fixtures | null = null;
@@ -189,6 +191,7 @@ export class GameView {
     const bodies = [state.player, ...state.items.filter((i) => !i.placed)];
     this.atmosphere.update(this.t, dt, bodies, this.motion);
     this.stage.settle(dt);
+    this.opening.update(this.stage.camera, dt, this.motion < 1);
     // Porthole parallax: the view outside shifts a little with the eye and the attendant.
     const eye = this.stage.eye;
     const px = (eye.x + state.player.pos.x * 0.5) * 0.025 * (0.3 + 0.7 * this.motion);

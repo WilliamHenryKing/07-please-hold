@@ -55,15 +55,47 @@ let cueSeed = 0;
 let records = loadRecords();
 let savedResults = 0;
 
-const store = new HudStore(snapshot(state, mode, audio.muted, records));
+let guide = (() => {
+  try {
+    return localStorage.getItem("please-hold:guide") ? -1 : 0;
+  } catch {
+    return 0;
+  }
+})();
+const opening = view.opening;
+const onboarding = () => ({ opening: opening.phase, guide });
+const store = new HudStore(snapshot(state, mode, audio.muted, records, onboarding()));
+const skipGuide = () => {
+  guide = -1;
+  try {
+    localStorage.setItem("please-hold:guide", "seen");
+  } catch {
+    /* Optional storage. */
+  }
+};
 const controls = {
-  primary: () => primary(state),
-  grab: () => grab(state),
-  push: () => pushOff(state),
+  begin: () => {
+    audio.unlock();
+    opening.begin(reducedQuery.matches);
+  },
+  skipGuide,
+  replayGuide: () => {
+    guide = 0;
+  },
+  primary: () => {
+    if (opening.phase === "done") primary(state);
+  },
+  grab: () => {
+    if (opening.phase === "done") grab(state);
+  },
+  push: () => {
+    if (opening.phase === "done") pushOff(state);
+  },
   restart: () => {
-    if (state.phase !== "playing") return;
+    if (state.phase !== "playing" || opening.phase !== "done") return;
     audio.play({ sound: "restart", gain: 0.6, rate: 1, pan: 0 });
     restartRoom(state);
+    if (guide >= 0) guide = 0;
   },
   replay: () => {
     state = createGame();
@@ -77,11 +109,21 @@ const controls = {
     audio.play({ sound: "toggle", gain: 0.5, rate: 1, pan: 0 });
   },
 };
+window.addEventListener("keydown", (e) => {
+  if (opening.phase === "title" && e.key === "Enter" && !e.repeat) {
+    e.preventDefault();
+    controls.begin();
+  }
+});
 
 const input = bindInput(canvas, {
   toWorld: (x, y) => view.stage.toWorld(x, y),
-  aimAt: (p) => aimAt(state, p),
-  aimAlong: (d) => aimAlong(state, view.stage.screenToWorldDir(d)),
+  aimAt: (p) => {
+    if (opening.phase === "done") aimAt(state, p);
+  },
+  aimAlong: (d) => {
+    if (opening.phase === "done") aimAlong(state, view.stage.screenToWorldDir(d));
+  },
   ...controls,
   setMode: (m) => {
     mode = m;
@@ -103,11 +145,17 @@ let first = true;
 function frame(now: number) {
   const dt = frozen ? 0 : Math.min(0.1, (now - last) / 1000) * timeScale;
   last = now;
-  input.poll();
-  carry = advance(state, carry + dt);
+  if (opening.phase === "done") {
+    input.poll();
+    carry = advance(state, carry + dt);
+  }
   const events = drainEvents(state);
   view.handle(events, state);
   for (const e of events) {
+    if (guide === 0 && (e.type === "throw" || e.type === "push")) guide = 1;
+    if (guide === 1 && e.type === "grab" && e.target === "rail") guide = 2;
+    if (guide === 2 && e.type === "grab" && e.target === "item") guide = 3;
+    if (guide === 3 && e.type === "place") skipGuide();
     if (e.type === "done") {
       audio.finale();
       continue;
@@ -115,6 +163,8 @@ function frame(now: number) {
     const cue = cueFor(e, state, cueSeed++);
     if (cue) audio.play(cue);
   }
+  if (guide === 1 && state.player.rail) guide = 2;
+  if (guide === 2 && state.player.holding) guide = 3;
   savedResults = Math.min(savedResults, state.results.length);
   if (state.results.length > savedResults) {
     records = saveResults(records, state.results.slice(savedResults));
@@ -122,7 +172,7 @@ function frame(now: number) {
   }
   audio.setRevolving(!!state.room.spinner && state.phase === "playing");
   view.update(state, dt);
-  store.publish(snapshot(state, mode, audio.muted, records));
+  store.publish(snapshot(state, mode, audio.muted, records, onboarding()));
   if (first) {
     first = false;
     layout();

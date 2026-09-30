@@ -36,3 +36,139 @@ body,
 #stage:focus-visible {
   outline-offset: -4px;
 }
+.opening {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, #1d2130f5, #1d2130bb 32%, transparent 75%);
+  color: #fff4dc;
+}
+.opening-copy {
+  margin-left: 5vw;
+  width: 40vw;
+  max-width: 500px;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d9a441;
+}
+.opening h1 {
+  font-size: clamp(64px, 8vw, 114px);
+  line-height: 0.89;
+  letter-spacing: -0.07em;
+  font-weight: 850;
+  margin: 26px 0;
+}
+.opening h1 em {
+  font-style: normal;
+  color: #e2b899;
+}
+.premise {
+  font-size: 19px;
+  line-height: 1.7;
+  margin: 0 0 26px;
+}
+.intro-button,
+.guide-replay {
+  background: #f4ead8;
+  color: #3a2a22;
+  min-height: 46px;
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-weight: 750;
+  cursor: pointer;
+  border: 2px solid #3a2a2222;
+}
+.guide-replay {
+  width: 46px;
+  padding: 8px;
+}
+.enter-note {
+  margin-left: 16px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.rise {
+  animation: opening-rise 0.8s both;
+}
+.rise:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.rise:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.rise:nth-child(4) {
+  animation-delay: 0.36s;
+}
+@keyframes opening-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.shift-guide {
+  pointer-events: auto;
+  background: #f4ead8f2;
+  color: #3a2a22;
+  width: min(350px, 100%);
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.shift-guide .eyebrow {
+  color: #8c3b3b;
+  margin-bottom: 6px;
+}
+.guide-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.guide-foot button {
+  min-height: 32px;
+  text-decoration: underline;
+  font-size: 11px;
+  cursor: pointer;
+}
+@media (max-width: 639px) {
+  .opening {
+    align-items: flex-end;
+    background: linear-gradient(0deg, #1d2130, #1d2130eb 25%, transparent 75%);
+  }
+  .opening-copy {
+    width: auto;
+    margin: 0 24px max(34px, env(safe-area-inset-bottom));
+  }
+  .opening h1 {
+    font-size: 72px;
+    margin: 18px 0;
+  }
+  .premise {
+    font-size: 16px;
+    margin-bottom: 22px;
+  }
+  .enter-note {
+    display: none;
+  }
+  .shift-guide {
+    width: 100%;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}

@@ -2,6 +2,9 @@ import type { Action } from "../game/actions";
 import type { HudSnapshot } from "./store";
 
 export interface Controls {
+  begin: () => void;
+  skipGuide: () => void;
+  replayGuide: () => void;
   primary: () => void;
   grab: () => void;
   push: () => void;

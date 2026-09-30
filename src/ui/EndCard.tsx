@@ -1,11 +1,10 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { formatTime } from "../game/evaluation";
+import { advanceCallStage, type CallStage, callStageAt } from "./callStage";
 import { Stars } from "./Stars";
 import type { HudSnapshot } from "./store";
-
-type Stage = "holding" | "connecting" | "connected";
 
 /**
  * The finale: after all that holding, the call finally connects, then the shift review
@@ -15,35 +14,77 @@ export function EndCard({
   result,
   onReplay,
   reduced,
+  sound,
 }: {
   result: NonNullable<HudSnapshot["result"]>;
   onReplay: () => void;
   reduced: boolean;
+  sound: ReactNode;
 }) {
+  const dialog = useRef<HTMLDialogElement>(null);
   const card = useRef<HTMLDivElement>(null);
-  const replay = useRef<HTMLButtonElement>(null);
-  const [stage, setStage] = useState<Stage>("holding");
-  useEffect(() => {
-    const scale = reduced ? 0.4 : 1;
-    const a = window.setTimeout(() => setStage("connecting"), 1500 * scale);
-    const b = window.setTimeout(() => setStage("connected"), 3000 * scale);
-    return () => {
-      window.clearTimeout(a);
-      window.clearTimeout(b);
-    };
-  }, [reduced]);
-  useEffect(() => {
-    if (stage === "connected") replay.current?.focus();
-  }, [stage]);
-  useGSAP(() => {
-    if (!card.current) return;
-    gsap.from(
-      card.current,
-      reduced
-        ? { opacity: 0, duration: 0.3 }
-        : { opacity: 0, y: 40, rotate: -2, duration: 0.7, ease: "back.out(1.6)" },
-    );
+  const born = useRef<number | null>(null);
+  const timers = useRef<number[]>([]);
+  const connected = useRef(false);
+  const [stage, setStage] = useState<CallStage>("holding");
+  const clearTimers = useCallback(() => {
+    for (const timer of timers.current) window.clearTimeout(timer);
+    timers.current = [];
   }, []);
+  const finishCall = () => {
+    connected.current = true;
+    clearTimers();
+    setStage("connected");
+  };
+  useLayoutEffect(() => {
+    const el = dialog.current;
+    if (!el) return;
+    el.showModal();
+    el.scrollTop = 0;
+    el.focus({ preventScroll: true });
+    return () => el.close();
+  }, []);
+  useEffect(() => {
+    if (connected.current) return;
+    born.current ??= performance.now();
+    const elapsed = performance.now() - born.current;
+    const scale = reduced ? 0.4 : 1;
+    setStage((current) => advanceCallStage(current, callStageAt(elapsed, reduced)));
+    timers.current = [
+      window.setTimeout(
+        () => {
+          if (!connected.current) setStage((current) => advanceCallStage(current, "connecting"));
+        },
+        Math.max(0, 1500 * scale - elapsed),
+      ),
+      window.setTimeout(
+        () => {
+          connected.current = true;
+          setStage("connected");
+        },
+        Math.max(0, 3000 * scale - elapsed),
+      ),
+    ];
+    return clearTimers;
+  }, [reduced, clearTimers]);
+  useLayoutEffect(() => {
+    if (stage === "connected" && dialog.current) {
+      dialog.current.scrollTop = 0;
+      dialog.current.focus({ preventScroll: true });
+    }
+  }, [stage]);
+  useGSAP(
+    () => {
+      if (!card.current) return;
+      gsap.from(
+        card.current,
+        reduced
+          ? { opacity: 0, duration: 0.3 }
+          : { opacity: 0, y: 40, rotate: -2, duration: 0.7, ease: "back.out(1.6)" },
+      );
+    },
+    { scope: card, dependencies: [reduced], revertOnUpdate: true },
+  );
   const { stats, evaluation, rooms } = result;
   const total = rooms.reduce((n, r) => n + r.result.stars, 0);
   const facts: [string, string][] = [
@@ -53,15 +94,19 @@ export function EndCard({
     ["Stars", `${total} / ${rooms.length * 3}`],
   ];
   return (
-    <div className="pointer-events-auto fixed inset-0 z-20 grid place-items-center overflow-y-auto bg-[#1d2130]/60 p-4">
-      <div
-        ref={card}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="eval-title"
-        className="w-full max-w-md rounded-3xl border-4 border-[#e3c7a1] bg-[#f4ead8] p-5 text-[#3a2a22] shadow-2xl sm:p-6"
-      >
-        <div aria-live="polite" className="flex items-center gap-3">
+    <dialog
+      ref={dialog}
+      className="ending-dialog pointer-events-auto"
+      aria-labelledby="eval-title"
+      aria-describedby="call-status"
+      aria-modal="true"
+      data-keyboard-scroll
+      tabIndex={-1}
+      onCancel={(event) => event.preventDefault()}
+    >
+      <div ref={card} className="ending-card">
+        <div className="ending-toolbar">{sound}</div>
+        <div id="call-status" aria-live="polite" className="flex items-center gap-3">
           <span
             aria-hidden="true"
             className={`grid size-11 shrink-0 place-items-center rounded-full text-2xl ${stage === "connected" ? "bg-[#9ed39a]" : "bg-[#e3c7a1]"} ${stage !== "connected" && !reduced ? "animate-pulse" : ""}`}
@@ -88,7 +133,7 @@ export function EndCard({
                 <li key={l}>“{l}”</li>
               ))}
             </ul>
-            <table className="mt-3 w-full text-left text-sm">
+            <table className="room-records mt-3 w-full text-left text-sm">
               <caption className="sr-only">Your rooms this shift</caption>
               <thead className="text-xs text-[#3a2a22]/65">
                 <tr>
@@ -129,14 +174,13 @@ export function EndCard({
           </h2>
         )}
         <button
-          ref={replay}
           type="button"
-          onClick={stage === "connected" ? onReplay : () => setStage("connected")}
+          onClick={stage === "connected" ? onReplay : finishCall}
           className="mt-4 w-full rounded-2xl bg-[#8c3b3b] px-4 py-3 text-lg font-bold text-[#fff4dc] shadow-[0_4px_0_rgba(58,42,34,0.35)] active:translate-y-0.5 active:shadow-none"
         >
           {stage === "connected" ? "Start another shift" : "Skip the hold music"}
         </button>
       </div>
-    </div>
+    </dialog>
   );
 }

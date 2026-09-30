@@ -9,7 +9,7 @@ import {
 import { collideBodies, collideSpinner, collideWalls, drift, type Impact } from "./physics";
 import { ROOMS } from "./rooms";
 import { roomResult } from "./scoring";
-import { handPosition, isLastRoom, loadRoom } from "./state";
+import { handPosition, heldItem, isLastRoom, loadRoom } from "./state";
 import type { GameState, Item } from "./types";
 import { dist } from "./vec";
 
@@ -35,23 +35,15 @@ function stepPlayer(state: GameState, dt: number) {
 function stepItem(state: GameState, item: Item, dt: number) {
   const p = state.player;
   if (item.placed) return;
-  if (item.held) {
-    item.pos = handPosition(p, item);
-    item.vel = { ...p.vel };
-    return;
-  }
+  if (item.held) return;
   item.ghost = Math.max(0, item.ghost - dt);
   drift(item, dt, ITEM_DRAG);
   noteBump(state, collideWalls(item, state.room, ITEM_RESTITUTION), "item");
   noteBump(state, collideSpinner(item, state.room, state.spinnerAngle, ITEM_RESTITUTION), "item");
   if (item.ghost > 0) return;
   // A returning item can bonk the attendant. Anchored to a rail, the attendant does not budge.
-  const anchored = !!p.rail;
-  const mass = p.mass;
-  if (anchored) p.mass = 1e6;
-  const hit = collideBodies(p, item, ITEM_RESTITUTION);
-  p.mass = mass;
-  if (anchored) p.vel = { x: 0, y: 0 };
+  const carrier = { ...p, mass: p.mass + (heldItem(state)?.mass ?? 0) };
+  const hit = collideBodies(carrier, item, ITEM_RESTITUTION, !!p.rail);
   if (hit && hit.speed > 0.6) {
     item.handled = true;
     state.stats.bonks++;
@@ -104,6 +96,13 @@ export function step(state: GameState, dt: number = FIXED_DT) {
   if (state.room.spinner) state.spinnerAngle += state.room.spinner.speed * dt;
   stepPlayer(state, dt);
   for (const item of state.items) stepItem(state, item, dt);
+  // Free-item collisions move the whole carrier. Sync its prop after all impulses,
+  // independent of the order in which room items were authored.
+  const carried = heldItem(state);
+  if (carried) {
+    carried.pos = handPosition(state.player, carried);
+    carried.vel = { ...state.player.vel };
+  }
   capture(state);
   checkTasks(state);
   const hatch = state.room.hatch;

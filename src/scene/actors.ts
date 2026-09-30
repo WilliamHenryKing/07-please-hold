@@ -127,12 +127,17 @@ export class ItemView {
     const settled = item.held || item.placed;
     if (settled) {
       this.spinRate = 0;
-      this.spin.rotation.z = THREE.MathUtils.lerp(this.spin.rotation.z, 0, Math.min(1, dt * 6));
+      this.spin.rotation.z =
+        motion < 1 ? 0 : THREE.MathUtils.lerp(this.spin.rotation.z, 0, Math.min(1, dt * 6));
     } else {
       this.spinRate *= Math.max(0, 1 - dt * 0.25);
       this.spin.rotation.z += (this.spinRate - item.vel.x * 0.3) * dt * motion;
     }
-    if (!this.slosh || dt <= 0) return;
+    if (!this.slosh) return;
+    if (dt <= 0 || motion < 1) {
+      this.lastVel.set(item.vel.x, item.vel.y);
+      return;
+    }
     const ax = (item.vel.x - this.lastVel.x) / dt;
     const ay = (item.vel.y - this.lastVel.y) / dt;
     this.lastVel.set(item.vel.x, item.vel.y);
@@ -143,5 +148,25 @@ export class ItemView {
     this.tilt.clampScalar(-0.6, 0.6);
     this.slosh.rotation.z = this.tilt.x * motion;
     this.slosh.scale.y = 1 + this.tilt.y * 0.8 * motion;
+  }
+
+  reset(item?: Item) {
+    this.spin.rotation.z = 0;
+    this.settleMotion();
+    if (item) {
+      this.lastVel.set(item.vel.x, item.vel.y);
+      this.root.position.set(item.pos.x, item.pos.y, item.placed ? -0.05 : 0);
+    }
+  }
+
+  settleMotion() {
+    this.spinRate = 0;
+    this.lastVel.set(0, 0);
+    this.tilt.set(0, 0);
+    this.tiltVel.set(0, 0);
+    if (this.slosh) {
+      this.slosh.rotation.z = 0;
+      this.slosh.scale.y = 1;
+    }
   }
 }

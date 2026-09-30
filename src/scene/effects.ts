@@ -64,4 +64,9 @@ export class Effects {
     this.mesh.count = this.puffs.length;
     this.mesh.instanceMatrix.needsUpdate = true;
   }
+
+  clear() {
+    this.puffs.length = 0;
+    this.mesh.count = 0;
+  }
 }

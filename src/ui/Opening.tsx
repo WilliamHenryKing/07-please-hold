@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
+import { focusPlaySurface } from "./focus";
 import type { Controls } from "./Hud";
 import type { HudSnapshot } from "./store";
 
 export function Title({ onBegin }: { onBegin: () => void }) {
   const button = useRef<HTMLButtonElement>(null);
-  useEffect(() => button.current?.focus(), []);
+  useLayoutEffect(() => button.current?.focus({ preventScroll: true }), []);
   return (
     <section className="opening" aria-labelledby="opening-title">
       <div className="opening-copy">
@@ -31,34 +32,39 @@ export function Title({ onBegin }: { onBegin: () => void }) {
 }
 
 export function Guide({ hud, controls }: { hud: HudSnapshot; controls: Controls }) {
-  const touch = hud.mode === "touch";
-  const steps = [
-    [
-      "A cushion is an engine",
-      `${touch ? "Drag toward the far wall and release" : "Aim right with the pointer or arrow keys; click or press Space"} to throw. The cushion goes one way; you drift the other.`,
-    ],
-    [
-      "Catch your breath",
-      `${touch ? "Tap Grab" : "Press E or tap Grab"} when the rail is within the green ring. Holding a rail stops you drifting.`,
-    ],
-    [
-      "Nothing stays lost",
-      `The cushion bounces back from the wall. Wait for it to come within reach, then ${touch ? "tap Grab" : "press E"}. Restart is always available.`,
-    ],
-    [
-      "Return it to the sofa",
-      `Aim at the sofa's glowing ring and throw the cushion. Anchored to a rail, you will not recoil. Tidying the room opens the hatch.`,
-    ],
-  ];
+  const el = useRef<HTMLElement>(null);
+  const prompt = hud.guidePrompt;
+  useLayoutEffect(() => {
+    if (prompt?.key && el.current) el.current.scrollTop = 0;
+  }, [prompt?.key]);
+  if (!prompt) return null;
   return (
-    <aside className="shift-guide" aria-label="Shift guide" aria-live="polite">
-      <p className="eyebrow">
-        {hud.guide + 1}/4 · {steps[hud.guide]?.[0]}
-      </p>
-      <p>{steps[hud.guide]?.[1]}</p>
+    <aside
+      ref={el}
+      className="shift-guide"
+      aria-label="Shift guide"
+      aria-live="polite"
+      data-keyboard-scroll
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: The bounded guide is a native keyboard scroll surface.
+      tabIndex={0}
+    >
+      <h2 className="eyebrow">
+        {prompt.step === null ? "Practice" : `${prompt.step + 1}/4`} · {prompt.title}
+      </h2>
+      <p>{prompt.body}</p>
       <div className="guide-foot">
-        <span aria-hidden="true">{steps.map((_, i) => (i === hud.guide ? "● " : "○ "))}</span>
-        <button type="button" onClick={controls.skipGuide}>
+        <span aria-hidden="true">
+          {prompt.step === null
+            ? "Your current task"
+            : [0, 1, 2, 3].map((i) => (i === prompt.step ? "● " : "○ "))}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            controls.skipGuide();
+            focusPlaySurface();
+          }}
+        >
           Skip the guide
         </button>
       </div>

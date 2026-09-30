@@ -4,11 +4,14 @@ import { hintFor, type InputMode } from "../game/hints";
 import { ROOMS } from "../game/rooms";
 import type { Records, RoomResult } from "../game/scoring";
 import type { GameState, Stats } from "../game/types";
+import type { GuidePrompt } from "./guideProgress";
 
 /** What the HUD shows. Rebuilt every frame, but React only re-renders when it changes. */
 export interface HudSnapshot {
   opening: "title" | "glide" | "done";
   guide: number;
+  guidePrompt: GuidePrompt | null;
+  reduced: boolean;
   roomIndex: number;
   roomCount: number;
   roomName: string;
@@ -37,7 +40,8 @@ export function snapshot(
   mode: InputMode,
   muted = false,
   records: Records = {},
-  onboarding: Pick<HudSnapshot, "opening" | "guide"> = { opening: "done", guide: -1 },
+  onboarding: Pick<HudSnapshot, "opening" | "guide"> &
+    Partial<Pick<HudSnapshot, "guidePrompt" | "reduced">> = { opening: "done", guide: -1 },
 ): HudSnapshot {
   const finished = state.phase === "done";
   const withBest = (r: RoomResult) => ({
@@ -48,6 +52,8 @@ export function snapshot(
   const last = state.results.at(-1);
   return {
     ...onboarding,
+    guidePrompt: onboarding.guidePrompt ?? null,
+    reduced: onboarding.reduced ?? false,
     roomIndex: state.roomIndex,
     roomCount: ROOMS.length,
     roomName: state.room.name,
@@ -79,10 +85,11 @@ export class HudStore {
 
   constructor(initial: HudSnapshot) {
     this.current = initial;
+    this.key = JSON.stringify(initial);
   }
 
   publish(next: HudSnapshot) {
-    const key = JSON.stringify(next.result ? { ...next, result: next.result.evaluation } : next);
+    const key = JSON.stringify(next);
     if (key === this.key) return;
     this.key = key;
     this.current = next;

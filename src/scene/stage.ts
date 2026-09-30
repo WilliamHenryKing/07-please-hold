@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { RoomDef, Vec } from "../game/types";
-import { loadEnvironment } from "./assets";
+import { loadEnvironment, type SceneAssets } from "./assets";
 import { PAL } from "./palette";
 import { modestGpu, Pipeline, pickQuality, type Quality } from "./pipeline";
 import { skyMaterial } from "./planet";
@@ -21,6 +21,17 @@ export class Stage {
   private target = new THREE.Vector3();
   private home = new THREE.Vector3();
   private shake = new THREE.Vector2();
+  private disposed = false;
+  private pendingSize = true;
+  private width = 1;
+  private height = 1;
+  private cancelCompile: (() => void) | null = null;
+  private cancellation = new Promise<void>((resolve) => {
+    this.cancelCompile = resolve;
+  });
+  get resources() {
+    return this.assets.resources;
+  }
   /** Visual-review camera pose; null means normal gameplay framing. */
   override: {
     position: [number, number, number];
@@ -32,9 +43,12 @@ export class Stage {
   private raycaster = new THREE.Raycaster();
   private plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
   /** Fraction of the viewport height reserved for the HUD at top and bottom. */
-  insets = { top: 0, bottom: 0 };
+  insets: { top: number; bottom: number; left?: number; right?: number } = { top: 0, bottom: 0 };
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    private assets: SceneAssets,
+  ) {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: false,
@@ -51,7 +65,7 @@ export class Stage {
     this.scene.background = new THREE.Color(PAL.space);
     // Image-based light from a real lounge; it is the only ambient term (no hemisphere fill).
     this.scene.environmentIntensity = 0.55;
-    loadEnvironment(this.renderer, this.scene);
+    void loadEnvironment(this.renderer, this.scene, assets).catch(() => {});
     // Outside the hull: the same planet the portholes show, filling any spare screen.
     const sky = new THREE.Mesh(
       new THREE.PlaneGeometry(220, 220),
@@ -102,7 +116,6 @@ export class Stage {
 
   /** Nothing is drawn until the shaders are compiled (the arrival veil covers the canvas). */
   private warmed = false;
-  private readonly born = performance.now();
 
   /**
    * Compile every shader in parallel (KHR_parallel_shader_compile) for the HDR target the
@@ -112,26 +125,64 @@ export class Stage {
    * passes it will meet (ANGLE builds its D3D shaders at the first draw). Behind the veil.
    * `later` holds what joins the scene in play (other rooms' things).
    */
-  async precompile(later?: THREE.Object3D): Promise<void> {
+  async precompile(later?: THREE.Object3D): Promise<boolean> {
+    if (this.disposed) return false;
+    this.applySize();
     if (later) this.scene.add(later);
+    this.resources.tree(this.scene);
     const r = this.renderer;
-    const previous = r.getRenderTarget();
-    r.setRenderTarget(this.pipeline.composer.readBuffer);
-    const compiling = r.compileAsync(this.scene, this.camera);
-    r.setRenderTarget(previous);
-    await compiling;
     const culled: THREE.Object3D[] = [];
+    const points: THREE.PointLight[] = [];
     this.scene.traverse((o) => {
-      if (o.frustumCulled) {
-        o.frustumCulled = false;
-        culled.push(o);
-      }
+      if ((o as THREE.PointLight).isPointLight && o.visible) points.push(o as THREE.PointLight);
     });
-    this.pipeline.composer.render();
-    for (const o of culled) o.frustumCulled = true;
-    // `later` (things other rooms use) stays in the scene, hidden, keeping its programs alive.
-    if (later) later.visible = false;
-    this.warmed = true;
+    const original = points.map((light) => light.visible);
+    const counts = points.length > 1 ? [1, points.length] : [points.length];
+    try {
+      const jobs: Promise<unknown>[] = [];
+      const previous = r.getRenderTarget();
+      try {
+        r.setRenderTarget(this.pipeline.composer.readBuffer);
+        for (const count of counts) {
+          points.forEach((light, i) => {
+            light.visible = i < count;
+          });
+          jobs.push(r.compileAsync(this.scene, this.camera));
+        }
+      } finally {
+        points.forEach((light, i) => {
+          light.visible = original[i] ?? true;
+        });
+        r.setRenderTarget(previous);
+      }
+      const complete = await Promise.race([
+        Promise.all(jobs).then(() => true),
+        this.cancellation.then(() => false),
+      ]);
+      if (!complete || this.disposed) return false;
+      this.scene.traverse((o) => {
+        if (o.frustumCulled) {
+          o.frustumCulled = false;
+          culled.push(o);
+        }
+      });
+      // Both authored lamp counts reach a real draw before room changes can use them.
+      for (const count of counts) {
+        points.forEach((light, i) => {
+          light.visible = i < count;
+        });
+        this.pipeline.composer.render();
+      }
+      this.warmed = true;
+      return true;
+    } finally {
+      points.forEach((light, i) => {
+        light.visible = original[i] ?? true;
+      });
+      for (const o of culled) o.frustumCulled = true;
+      // Hidden warm rooms retain their materials/programs until this view is disposed.
+      if (later) later.visible = false;
+    }
   }
 
   /** Fit the key light's shadow frustum to the room, snapped to whole shadow-map texels. */
@@ -161,27 +212,39 @@ export class Stage {
    * during play except for a tiny spring nudge on hard bumps.
    */
   frame(room: RoomDef) {
+    if (this.disposed) return;
     this.room = room;
-    const w = this.renderer.domElement.clientWidth || window.innerWidth;
-    const h = this.renderer.domElement.clientHeight || window.innerHeight;
-    this.renderer.setPixelRatio(this.pixelRatio());
-    this.renderer.setSize(w, h, false);
-    this.pipeline.setSize(w, h, this.pixelRatio());
+    const w = Math.max(1, this.renderer.domElement.clientWidth || window.innerWidth);
+    const h = Math.max(1, this.renderer.domElement.clientHeight || window.innerHeight);
+    if (
+      w !== this.width ||
+      h !== this.height ||
+      this.renderer.getPixelRatio() !== this.pixelRatio()
+    )
+      this.pendingSize = true;
+    this.width = w;
+    this.height = h;
     this.camera.aspect = w / h;
-    this.rolled = this.camera.aspect < 0.85 && room.width > room.height;
+    const left = this.insets.left ?? 0;
+    const rightInset = this.insets.right ?? 0;
+    const usableW = Math.max(0.1, 1 - left - rightInset);
+    // Vertical guide changes never turn the room; only a stable side rail affects orientation.
+    this.rolled = this.camera.aspect * usableW < 0.85 && room.width > room.height;
     const up = this.rolled ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
     const right = this.rolled ? new THREE.Vector3(0, -1, 0) : new THREE.Vector3(1, 0, 0);
     const across = this.rolled ? room.height : room.width;
     const along = this.rolled ? room.width : room.height;
-    const usable = Math.max(0.4, 1 - this.insets.top - this.insets.bottom);
+    const usable = Math.max(0.1, 1 - this.insets.top - this.insets.bottom);
     const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
     const margin = this.rolled ? 0.35 : 0.6;
     const halfH = along / 2 + margin;
     const halfW = across / 2 + margin;
-    const dist = Math.max(halfH / (tan * usable), halfW / (tan * this.camera.aspect)) + 1.4;
+    const dist =
+      Math.max(halfH / (tan * usable), halfW / (tan * this.camera.aspect * usableW)) + 1.4;
     // Shift the view so the room sits in the band between the HUD insets.
     const offset = ((this.insets.top - this.insets.bottom) / 2) * 2 * tan * dist;
-    this.target.copy(up).multiplyScalar(offset);
+    const offsetX = (rightInset - left) * tan * dist * this.camera.aspect;
+    this.target.copy(up).multiplyScalar(offset).addScaledVector(right, offsetX);
     this.home
       .copy(this.target)
       .addScaledVector(up, dist * 0.09)
@@ -191,6 +254,7 @@ export class Stage {
     this.camera.position.copy(this.home);
     this.camera.lookAt(this.target);
     this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld(true);
     // Keep the key light up-left of the view whichever way the screen is turned.
     this.key.position.copy(up).multiplyScalar(7).addScaledVector(right, -5).setZ(9);
     this.fitShadow(room);
@@ -203,12 +267,14 @@ export class Stage {
 
   /** A small push of the camera away from a hard hit; springs back. */
   nudge(dir: Vec, strength: number) {
+    if (this.disposed) return;
     this.shake.x += dir.x * strength;
     this.shake.y += dir.y * strength;
   }
 
   /** Spring the nudge back to rest. Call once per frame. */
   settle(dt: number) {
+    if (this.disposed) return;
     const o = this.override;
     if (o) {
       this.camera.up.set(0, 1, 0);
@@ -240,7 +306,10 @@ export class Stage {
 
   /** Map a client pixel to the play plane (z = 0). */
   toWorld(clientX: number, clientY: number): Vec | null {
+    if (this.disposed) return null;
     const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    this.camera.updateMatrixWorld(true);
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1,
@@ -252,6 +321,7 @@ export class Stage {
 
   /** Project a play-plane point to client pixels. */
   toScreen(p: Vec): { x: number; y: number } {
+    this.camera.updateMatrixWorld(true);
     const v = new THREE.Vector3(p.x, p.y, 0).project(this.camera);
     const rect = this.renderer.domElement.getBoundingClientRect();
     return {
@@ -261,8 +331,35 @@ export class Stage {
   }
 
   render() {
-    // Until the shaders are compiled the veil hides the canvas (its safety reveal comes at 12 s,
-    // and from then on the scene is drawn regardless).
-    if (this.warmed || performance.now() - this.born > 11500) this.pipeline.render();
+    if (this.disposed || !this.warmed) return;
+    this.applySize();
+    this.pipeline.render();
+  }
+
+  private applySize() {
+    if (!this.pendingSize) return;
+    this.pendingSize = false;
+    const ratio = this.pixelRatio();
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(this.width, this.height, false);
+    this.pipeline.setSize(this.width, this.height, ratio);
+  }
+
+  resetMotion() {
+    this.shake.set(0, 0);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.cancelCompile?.();
+    this.cancelCompile = null;
+    this.resources.tree(this.scene);
+    this.scene.environment = null;
+    this.assets.dispose();
+    this.pipeline.dispose();
+    this.scene.clear();
+    this.aoHidden.length = 0;
+    this.renderer.dispose();
   }
 }

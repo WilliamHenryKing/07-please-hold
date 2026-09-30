@@ -53,14 +53,22 @@ export function parseRecords(raw: string | null): Records {
   if (!raw) return {};
   try {
     const data: unknown = JSON.parse(raw);
-    if (!data || typeof data !== "object") return {};
+    if (!data || typeof data !== "object" || Array.isArray(data)) return {};
     const out: Records = {};
     for (const [id, v] of Object.entries(data as Record<string, unknown>)) {
+      if (!Object.hasOwn(PARS, id) || !v || typeof v !== "object" || Array.isArray(v)) continue;
       const r = v as Partial<RoomResult>;
       if (
         typeof r.moves === "number" &&
+        Number.isInteger(r.moves) &&
+        r.moves >= 0 &&
         typeof r.time === "number" &&
-        typeof r.stars === "number"
+        Number.isFinite(r.time) &&
+        r.time >= 0 &&
+        typeof r.stars === "number" &&
+        Number.isInteger(r.stars) &&
+        r.stars >= 1 &&
+        r.stars <= 3
       ) {
         out[id] = { roomId: id, moves: r.moves, time: r.time, stars: r.stars };
       }

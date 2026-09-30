@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Player } from "../game/types";
-import { loadModel, tex } from "./assets";
+import { loadModel, type SceneAssets, tex, withSceneAssets } from "./assets";
 import { PAL } from "./palette";
 import { surfaces } from "./surfaces";
 
@@ -18,6 +18,7 @@ export type Gesture = "throw" | "hit" | "cheer";
  */
 export class AttendantView {
   readonly root = new THREE.Group();
+  readonly ready: Promise<void>;
   private rig = new THREE.Group();
   private inner = new THREE.Group();
   private model: THREE.Object3D | null = null;
@@ -28,51 +29,59 @@ export class AttendantView {
   private squash = 0;
   private yaw = 0;
   private lean = 0;
+  private disposed = false;
+  private finished = (event: { action: THREE.AnimationAction }) => {
+    if (this.disposed) return;
+    if (event.action !== this.base) event.action.fadeOut(0.25);
+    this.base?.reset().fadeIn(0.25).play();
+  };
 
-  constructor() {
+  constructor(private assets: SceneAssets) {
     this.inner.scale.setScalar(SCALE);
     this.inner.position.y = -CENTRE_Y * SCALE;
     this.rig.add(this.inner);
     this.root.add(this.rig);
-    void this.load();
+    this.ready = this.load();
   }
 
   private async load() {
-    const gltf = await loadModel("bellhop.glb");
-    const lib = surfaces();
-    // glTF UVs run top-down, so this texture must not be flipped on upload.
-    const atlas = tex("character/bellhop_atlas.webp", true, 1, false);
-    atlas.wrapS = atlas.wrapT = THREE.ClampToEdgeWrapping;
-    // Wool-like body: soft sheen, rough, woven detail from the uniform cloth's normal map.
-    const cloth = lib.cloth(0xffffff);
-    const skinMat = new THREE.MeshPhysicalMaterial({
-      map: atlas,
-      roughness: 0.62,
-      sheen: 0.35,
-      sheenRoughness: 0.7,
-      sheenColor: new THREE.Color(0xffe3d0),
-      normalMap: cloth.normalMap,
-      normalScale: new THREE.Vector2(0.35, 0.35),
-    });
-    gltf.scene.traverse((o) => {
-      if (o instanceof THREE.SkinnedMesh) {
-        o.material = skinMat;
-        o.castShadow = true;
-        o.frustumCulled = false;
-      }
-      if (o instanceof THREE.Bone) this.bones.set(o.name, o);
-    });
-    this.model = gltf.scene;
-    this.inner.add(gltf.scene);
-    this.dress(lib);
-    this.mixer = new THREE.AnimationMixer(gltf.scene);
-    for (const clip of gltf.animations) this.clips.set(clip.name, this.mixer.clipAction(clip));
-    this.base = this.clips.get("Jump_Idle") ?? null;
-    this.base?.play();
-    this.mixer.addEventListener("finished", (e) => {
-      const done = (e as unknown as { action: THREE.AnimationAction }).action;
-      if (done !== this.base) done.fadeOut(0.25);
-      this.base?.reset().fadeIn(0.25).play();
+    const gltf = await loadModel("bellhop.glb", this.assets);
+    this.assets.assertAlive();
+    withSceneAssets(this.assets, () => {
+      const lib = surfaces();
+      // glTF UVs run top-down, so this texture must not be flipped on upload.
+      const atlas = tex("character/bellhop_atlas.webp", true, 1, false);
+      atlas.wrapS = atlas.wrapT = THREE.ClampToEdgeWrapping;
+      // Wool-like body: soft sheen, rough, woven detail from the uniform cloth's normal map.
+      const cloth = lib.cloth(0xffffff);
+      const skinMat = new THREE.MeshPhysicalMaterial({
+        map: atlas,
+        roughness: 0.62,
+        sheen: 0.35,
+        sheenRoughness: 0.7,
+        sheenColor: new THREE.Color(0xffe3d0),
+        normalMap: cloth.normalMap,
+        normalScale: new THREE.Vector2(0.35, 0.35),
+      });
+      this.assets.resources.material(skinMat);
+      this.assets.resources.release(cloth);
+      gltf.scene.traverse((o) => {
+        if (o instanceof THREE.SkinnedMesh) {
+          o.material = skinMat;
+          o.castShadow = true;
+          o.frustumCulled = false;
+        }
+        if (o instanceof THREE.Bone) this.bones.set(o.name, o);
+      });
+      this.model = gltf.scene;
+      this.inner.add(gltf.scene);
+      this.dress(lib);
+      this.mixer = new THREE.AnimationMixer(gltf.scene);
+      for (const clip of gltf.animations) this.clips.set(clip.name, this.mixer.clipAction(clip));
+      this.base = this.clips.get("Jump_Idle") ?? null;
+      this.base?.play();
+      this.mixer.addEventListener("finished", this.finished);
+      this.assets.resources.tree(this.root);
     });
   }
 
@@ -116,6 +125,7 @@ export class AttendantView {
 
   /** Visible recoil or impact: a quick squash along `dir` (world space). */
   kick(strength = 1, dir: { x: number; y: number } = { x: 0, y: 1 }) {
+    if (this.disposed) return;
     this.squash = Math.min(1, this.squash + strength);
     const a = Math.atan2(dir.y, dir.x);
     this.rig.rotation.z = a;
@@ -124,9 +134,11 @@ export class AttendantView {
 
   /** One-shot body language: throw, knocked, or a small cheer. */
   gesture(kind: Gesture) {
+    if (this.disposed) return;
     const name = kind === "throw" ? "Throw" : kind === "hit" ? "Hit_A" : "Cheer";
     const action = this.clips.get(name);
     if (!action || !this.base) return;
+    for (const clip of this.clips.values()) if (clip !== this.base) clip.stop();
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = false;
@@ -163,6 +175,7 @@ export class AttendantView {
   }
 
   update(p: Player, _t: number, dt: number, motion: number) {
+    if (this.disposed) return;
     this.root.position.set(p.pos.x, p.pos.y, 0);
     // Face the camera, turned a little toward the aim; lean with drift.
     const yawTarget = THREE.MathUtils.clamp(p.aim.x, -1, 1) * 0.55;
@@ -173,7 +186,7 @@ export class AttendantView {
       this.model.rotation.z = this.lean;
     }
     if (this.mixer) {
-      this.mixer.update(dt * (0.4 + 0.6 * motion));
+      this.mixer.update(motion < 1 ? 0 : dt);
       this.reach(p.aim, p.holding || p.rail ? 1 : 0.7);
     }
     this.squash = Math.max(0, this.squash - dt * 4);
@@ -181,5 +194,28 @@ export class AttendantView {
     const k = this.squash;
     const s = Math.sin(k * Math.PI * 1.5) * k * 0.3 * motion;
     this.rig.scale.set(1 - s, 1 + s * 0.6, 1 + s * 0.3);
+  }
+
+  resetMotion() {
+    this.squash = this.yaw = this.lean = 0;
+    this.rig.rotation.z = this.inner.rotation.z = 0;
+    this.rig.scale.setScalar(1);
+    this.mixer?.stopAllAction();
+    this.base?.reset().setEffectiveWeight(1).play();
+    this.mixer?.setTime(0);
+    if (this.model) this.model.rotation.set(0, 0, 0);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.mixer?.removeEventListener("finished", this.finished);
+    this.mixer?.stopAllAction();
+    if (this.model) this.mixer?.uncacheRoot(this.model);
+    this.clips.clear();
+    this.bones.clear();
+    this.mixer = this.base = null;
+    this.model = null;
+    this.root.clear();
   }
 }

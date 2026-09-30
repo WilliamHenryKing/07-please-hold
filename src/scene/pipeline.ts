@@ -163,8 +163,10 @@ export class Pipeline {
   private ema = 16.7;
   private slowFor = 0;
   private spent = false;
+  private disposed = false;
 
   render() {
+    if (this.disposed) return;
     this.composer.render();
     const now = performance.now();
     const ms = this.last ? now - this.last : 0;
@@ -185,6 +187,7 @@ export class Pipeline {
    * never oscillates. False when nothing is left.
    */
   step(): boolean {
+    if (this.disposed) return false;
     if (this.ao?.enabled) {
       this.ao.enabled = false;
       return true;
@@ -214,5 +217,17 @@ export class Pipeline {
       pixelRatio: +this.renderer.getPixelRatio().toFixed(3),
       scale: +this.scale.toFixed(2),
     };
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.onScale = () => {};
+    for (const pass of this.composer.passes) pass.dispose();
+    // r186 omits these materials from the passes' own disposal methods.
+    this.ao?.gtaoMaterial.dispose();
+    this.ao?.blendMaterial.dispose();
+    this.bloom?.materialHighPassFilter.dispose();
+    this.composer.dispose();
   }
 }

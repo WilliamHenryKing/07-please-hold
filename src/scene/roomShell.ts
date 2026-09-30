@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { RoomDef } from "../game/types";
+import { assetsForBuild } from "./assets";
 import { mat, PAL } from "./palette";
 import { skyMaterial } from "./planet";
 import { sconceModel } from "./props";
@@ -61,10 +62,11 @@ export interface Shell {
   /** Press the padded wall nearest `at` in, as if something soft just hit it. */
   dent: (at: { x: number; y: number }, strength: number) => void;
   update: (dt: number) => void;
+  reset: () => void;
 }
 
 function instanced(geo: THREE.BufferGeometry, material: THREE.Material, n: number) {
-  const mesh = new THREE.InstancedMesh(geo, material, n);
+  const mesh = new THREE.InstancedMesh(assetsForBuild().geometry(geo), material, n);
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -157,7 +159,7 @@ function portholes(windows: Porthole[], group: THREE.Group) {
 }
 
 /** Padded floor, ceiling and side walls running toward the camera. They dent when hit. */
-function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"> {
+function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update" | "reset"> {
   const hw = room.width / 2;
   const hh = room.height / 2;
   const t = 0.5;
@@ -219,6 +221,14 @@ function frame(room: RoomDef, group: THREE.Group): Pick<Shell, "dent" | "update"
   }
   let dirty = false;
   return {
+    reset() {
+      squash.fill(0);
+      segs.forEach((_, n) => {
+        place(n);
+      });
+      dirty = false;
+      pads.instanceMatrix.needsUpdate = true;
+    },
     dent(at, strength) {
       let best = -1;
       let bestD = Number.POSITIVE_INFINITY;

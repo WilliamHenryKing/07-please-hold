@@ -42,7 +42,7 @@ Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp,
 - **A camera that never makes you seasick.** It is fixed and gently tilted. On a portrait phone the room turns a quarter to fill the screen, because in orbit there is no "up".
 - **Feel.** The attendant squashes along the hit, thrown things tumble, there is a faint drift trail, and hard bumps give a tiny camera nudge. All of it is toned down under `prefers-reduced-motion`.
 - **Sound design.** CC0 elevator music on hold, padded thumps, brass clinks, a pizzicato jingle per task, station hum, a synthesised phone ring, and a mute that remembers.
-- **Mouse, touch and keyboard.** Labelled controls, visible focus, and an in-place first-time hint.
+- **Mouse, touch and keyboard.** Labelled controls, visible focus, a four-action first lesson and contextual help for the room and item you are working on.
 
 ## Screenshots
 
@@ -74,7 +74,7 @@ Notable techniques:
 bun install
 bun run dev      # http://127.0.0.1:4517/
 bun run check    # strict tsc, Biome, bun test, production build into dist/
-bun run e2e      # optional: Playwright plays room 1 headless
+bun run e2e      # Playwright: all three rooms, ending/replay, touch, input and loading recovery
 ```
 
 ## Credits

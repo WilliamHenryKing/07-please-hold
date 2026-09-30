@@ -70,24 +70,26 @@ export function collideSpinner(body: Body, room: RoomDef, angle: number, e: numb
   return { speed: -vn, at: { ...body.pos } };
 }
 
-/** Elastic-ish collision between two free bodies, conserving momentum. */
-export function collideBodies(a: Body, b: Body, e: number): Impact | null {
+/** Elastic-ish collision; a fixed first body absorbs the impulse without moving. */
+export function collideBodies(a: Body, b: Body, e: number, fixedA = false): Impact | null {
   const d = dist(a.pos, b.pos);
   const min = a.radius + b.radius;
   if (d >= min) return null;
   const n = norm(sub(b.pos, a.pos), { x: 1, y: 0 });
-  const total = a.mass + b.mass;
+  const inverseA = fixedA ? 0 : 1 / a.mass;
+  const inverseB = 1 / b.mass;
+  const inverseTotal = inverseA + inverseB;
   const overlap = min - d;
-  a.pos.x -= n.x * overlap * (b.mass / total);
-  a.pos.y -= n.y * overlap * (b.mass / total);
-  b.pos.x += n.x * overlap * (a.mass / total);
-  b.pos.y += n.y * overlap * (a.mass / total);
+  a.pos.x -= n.x * overlap * (inverseA / inverseTotal);
+  a.pos.y -= n.y * overlap * (inverseA / inverseTotal);
+  b.pos.x += n.x * overlap * (inverseB / inverseTotal);
+  b.pos.y += n.y * overlap * (inverseB / inverseTotal);
   const vn = dot(sub(b.vel, a.vel), n);
   if (vn >= 0) return null;
-  const j = (-(1 + e) * vn) / (1 / a.mass + 1 / b.mass);
-  a.vel.x -= (j / a.mass) * n.x;
-  a.vel.y -= (j / a.mass) * n.y;
-  b.vel.x += (j / b.mass) * n.x;
-  b.vel.y += (j / b.mass) * n.y;
+  const j = (-(1 + e) * vn) / inverseTotal;
+  a.vel.x -= j * inverseA * n.x;
+  a.vel.y -= j * inverseA * n.y;
+  b.vel.x += j * inverseB * n.x;
+  b.vel.y += j * inverseB * n.y;
   return { speed: -vn, at: { x: (a.pos.x + b.pos.x) / 2, y: (a.pos.y + b.pos.y) / 2 } };
 }

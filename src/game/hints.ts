@@ -17,7 +17,8 @@ export function hintFor(state: GameState, mode: InputMode): string | null {
   const s = state.stats;
 
   if (state.hatchOpen) return "Room tidy. Float through the open hatch.";
-  if (state.roomIndex === 0 && s.throws === 0 && item) {
+  const attemptMoves = s.throws + s.pushes - state.roomStart.moves;
+  if (state.roomIndex === 0 && attemptMoves === 0 && item) {
     return `${act} toward the far wall to throw the ${item.label}. You drift the other way.`;
   }
   if (!p.rail && railInReach(state)) return `Handrail in reach: press ${grabKey} to stop.`;

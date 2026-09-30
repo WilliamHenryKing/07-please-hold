@@ -14,10 +14,12 @@ export type Action = "throw" | "push" | "grab" | "none";
 
 /** Aim toward a world point (pointer) or along a direction (keys). */
 export function aimAt(state: GameState, target: Vec) {
+  if (state.phase !== "playing") return;
   state.player.aim = norm(sub(target, state.player.pos), state.player.aim);
 }
 
 export function aimAlong(state: GameState, dir: Vec) {
+  if (state.phase !== "playing") return;
   state.player.aim = norm(dir, state.player.aim);
 }
 
@@ -152,5 +154,6 @@ export function restartRoom(state: GameState) {
   state.stats.restarts++;
   // A tidied room that is restarted gets scored again on its next finish.
   if (state.results.at(-1)?.roomId === state.room.id) state.results.pop();
+  state.events = [];
   loadRoom(state, state.roomIndex);
 }

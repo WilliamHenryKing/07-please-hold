@@ -13,7 +13,7 @@
       #arrival.is-done { opacity: 0; visibility: hidden; }
       #arrival .port { width: 120px; height: 120px; border-radius: 50%; border: 10px solid #b8bcc2; box-shadow: 0 0 0 12px #ecdcc8, 0 10px 30px #3a2a2244; background: radial-gradient(circle at 78% 120%, #d9a07a 0 30%, #4f7f8f 31% 52%, #f2a07b 53%, #1d2130 58%); overflow: hidden; animation: arrival-bob 3s ease-in-out infinite; }
       #arrival .title { font-size: 22px; letter-spacing: 0.3em; color: #8c3b3b; }
-      #arrival .sub { font-weight: 500; letter-spacing: 0.12em; text-transform: none; font-size: 14px; opacity: 0.8; }
+      #arrival .sub { max-width:calc(100vw - 32px); font-weight: 500; letter-spacing: 0.12em; text-transform: none; font-size: 14px; opacity: 0.8; }
       #arrival .bar { width: 140px; height: 4px; border-radius: 4px; background: #3a2a2222; overflow: hidden; }
       #arrival .bar i { display: block; height: 100%; width: 40%; border-radius: 4px; background: #d9a441; animation: arrival-slide 1.2s ease-in-out infinite; }
       @keyframes arrival-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }

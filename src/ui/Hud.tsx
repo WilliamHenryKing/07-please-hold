@@ -1,4 +1,5 @@
 import type { Action } from "../game/actions";
+import { focusPlaySurface } from "./focus";
 import type { HudSnapshot } from "./store";
 
 export interface Controls {
@@ -21,7 +22,7 @@ const PRIMARY_LABEL: Record<Action, string> = {
 };
 
 const base =
-  "rounded-2xl border-2 border-[#3a2a22]/15 px-4 py-3 font-semibold shadow-[0_4px_0_rgba(58,42,34,0.25)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-45 disabled:shadow-none";
+  "hud-button rounded-2xl border-2 border-[#3a2a22]/15 px-4 py-3 font-semibold shadow-[0_4px_0_rgba(58,42,34,0.25)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-45 disabled:shadow-none";
 const btn = `${base} bg-[#f4ead8] text-[#3a2a22]`;
 const hot = `${base} bg-[#8c3b3b] text-[#fff4dc]`;
 
@@ -38,7 +39,10 @@ export function TaskCard({ hud }: { hud: HudSnapshot }) {
   return (
     <section
       aria-label="Current room and tasks"
-      className="pointer-events-auto max-w-[min(22rem,calc(100vw-7.5rem))] rounded-2xl bg-[#f4ead8]/92 px-4 py-3 text-[#3a2a22] shadow-lg backdrop-blur-sm"
+      data-keyboard-scroll
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: The bounded task list must be keyboard scrollable on short screens.
+      tabIndex={0}
+      className="task-card pointer-events-auto rounded-2xl bg-[#f4ead8]/92 px-4 py-3 text-[#3a2a22] shadow-lg backdrop-blur-sm"
     >
       <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#8c3b3b]">
         Room {hud.roomIndex + 1} of {hud.roomCount} · {hud.roomName}
@@ -73,10 +77,13 @@ export function RestartButton({ hud, onRestart }: { hud: HudSnapshot; onRestart:
   return (
     <button
       type="button"
-      onClick={onRestart}
+      onClick={() => {
+        onRestart();
+        focusPlaySurface();
+      }}
       disabled={hud.finished}
       aria-label="Restart this room (R)"
-      className={`${btn} pointer-events-auto px-3 py-2 text-sm`}
+      className={`${btn} restart-button pointer-events-auto px-3 py-2 text-sm`}
     >
       ↺ Restart
       <Key k="R" show={hud.mode === "pointer"} />
@@ -84,16 +91,25 @@ export function RestartButton({ hud, onRestart }: { hud: HudSnapshot; onRestart:
   );
 }
 
-export function MuteButton({ hud, onToggle }: { hud: HudSnapshot; onToggle: () => void }) {
+export function MuteButton({
+  hud,
+  onToggle,
+  label = false,
+}: {
+  hud: HudSnapshot;
+  onToggle: () => void;
+  label?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-pressed={hud.muted}
       aria-label={hud.muted ? "Sound off. Turn sound on (M)" : "Sound on. Mute (M)"}
-      className={`${btn} pointer-events-auto px-3 py-2 text-sm`}
+      className={`${btn} sound-button pointer-events-auto px-3 py-2 text-sm`}
     >
       <span aria-hidden="true">{hud.muted ? "🔇" : "🔊"}</span>
+      {label && <span>Sound {hud.muted ? "off" : "on"}</span>}
       <Key k="M" show={hud.mode === "pointer"} />
     </button>
   );
@@ -103,7 +119,7 @@ export function HintBar({ hint }: { hint: string | null }) {
   return (
     <p
       aria-live="polite"
-      className={`mx-auto max-w-[36rem] rounded-full bg-[#1d2130]/80 px-4 py-2 text-center text-sm text-[#fff4dc] shadow-lg transition-opacity duration-300 ${hint ? "opacity-100" : "opacity-0"}`}
+      className={`hint-bar rounded-full bg-[#1d2130]/80 px-4 py-2 text-center text-sm text-[#fff4dc] shadow-lg transition-opacity duration-300 ${hint ? "opacity-100" : "opacity-0"}`}
     >
       {hint ?? " "}
     </p>
@@ -115,13 +131,16 @@ export function ActionPad({ hud, controls }: { hud: HudSnapshot; controls: Contr
   return (
     <fieldset
       aria-label="Actions"
-      className="pointer-events-auto m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0"
+      className="action-pad pointer-events-auto m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0"
     >
       {hud.canPush && (
         <button
           type="button"
           className={btn}
-          onClick={controls.push}
+          onClick={() => {
+            controls.push();
+            focusPlaySurface();
+          }}
           aria-label="Push off carrying the item (Q)"
         >
           Push off carrying
@@ -131,7 +150,10 @@ export function ActionPad({ hud, controls }: { hud: HudSnapshot; controls: Contr
       <button
         type="button"
         className={btn}
-        onClick={controls.grab}
+        onClick={() => {
+          controls.grab();
+          focusPlaySurface();
+        }}
         disabled={!hud.canGrab}
         aria-label="Grab the nearest rail or item (E)"
       >
@@ -141,7 +163,10 @@ export function ActionPad({ hud, controls }: { hud: HudSnapshot; controls: Contr
       <button
         type="button"
         className={`${hot} min-w-[7.5rem]`}
-        onClick={controls.primary}
+        onClick={() => {
+          controls.primary();
+          focusPlaySurface();
+        }}
         disabled={hud.primary === "none"}
         aria-label={`${PRIMARY_LABEL[hud.primary]} toward your aim (Space)`}
       >

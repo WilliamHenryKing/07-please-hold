@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { pbrSet, tex } from "./assets";
+import { assetsForBuild, pbrSet, type SceneAssets, tex } from "./assets";
 
 // The material library: sourced PBR sets (assets.manifest.json) tinted per role. Instance or
 // base colours multiply the neutral albedo, so repeated panels vary without new textures.
@@ -18,10 +18,11 @@ function pbr(
     m.aoMap = set.arm;
     m.aoMapIntensity = 1;
   }
+  assetsForBuild().resources.material(m);
   return m;
 }
 
-let lib: ReturnType<typeof build> | null = null;
+const libraries = new WeakMap<SceneAssets, ReturnType<typeof build>>();
 
 function build() {
   const tufted = pbrSet(
@@ -112,6 +113,13 @@ function build() {
 }
 
 export function surfaces() {
-  if (!lib) lib = build();
+  const owner = assetsForBuild();
+  let lib = libraries.get(owner);
+  if (!lib) {
+    lib = build();
+    for (const value of Object.values(lib))
+      if (value instanceof THREE.Material) owner.resources.retain(value);
+    libraries.set(owner, lib);
+  }
   return lib;
 }

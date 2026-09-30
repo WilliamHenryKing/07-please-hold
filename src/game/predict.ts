@@ -9,6 +9,7 @@ import {
 } from "./constants";
 import { collideSpinner, collideWalls, drift } from "./physics";
 import { handPosition, heldItem } from "./state";
+import { FIXED_DT } from "./step";
 import type { Body, GameState, RoomDef, Vec } from "./types";
 
 export interface Preview {
@@ -26,8 +27,8 @@ export function tracePath(
   opts: { seconds: number; bounces: number; e: number; drag: number; every?: number },
 ): Vec[] {
   const b: Body = { ...body, pos: { ...body.pos }, vel: { ...body.vel } };
-  const dt = 1 / 60;
-  const every = opts.every ?? 3;
+  const dt = FIXED_DT;
+  const every = opts.every ?? 6;
   const points: Vec[] = [{ ...b.pos }];
   let angle = angle0;
   let bounces = 0;
@@ -35,9 +36,11 @@ export function tracePath(
   for (let i = 1; i <= steps; i++) {
     if (room.spinner) angle += room.spinner.speed * dt;
     drift(b, dt, opts.drag);
-    const hit = collideWalls(b, room, opts.e) ?? collideSpinner(b, room, angle, opts.e);
-    if (hit) bounces++;
-    if (i % every === 0 || hit) points.push({ ...b.pos });
+    const wall = collideWalls(b, room, opts.e);
+    const spinner = collideSpinner(b, room, angle, opts.e);
+    if (wall) bounces++;
+    if (spinner) bounces++;
+    if (i % every === 0 || wall || spinner || i === steps) points.push({ ...b.pos });
     if (bounces > opts.bounces) break;
   }
   return points;

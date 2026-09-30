@@ -1,7 +1,8 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useRef, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { EndCard } from "./EndCard";
+import { focusPlaySurface } from "./focus";
 import { ActionPad, type Controls, HintBar, MuteButton, RestartButton, TaskCard } from "./Hud";
 import { Guide, Title } from "./Opening";
 import { RoomCard } from "./RoomCard";
@@ -22,7 +23,7 @@ function RoomBanner({ index, name, reduced }: { index: number; name: string; red
         ease: "power2.out",
       }).to(el.current, { opacity: 0, duration: 0.6, delay: 1.6 });
     },
-    { dependencies: [index] },
+    { scope: el, dependencies: [index, reduced], revertOnUpdate: true },
   );
   return (
     <div
@@ -44,52 +45,69 @@ function RoomBanner({ index, name, reduced }: { index: number; name: string; red
 export function App({
   store,
   controls,
-  reduced,
 }: {
   store: HudStore;
   controls: Controls;
-  reduced: boolean;
+  reduced?: boolean;
 }) {
   const hud = useSyncExternalStore(store.subscribe, store.get);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Entering a new room restores neutral play focus after the old controls change.
+  useLayoutEffect(() => {
+    if (hud.opening !== "done" || hud.finished) return;
+    const frame = requestAnimationFrame(focusPlaySurface);
+    return () => cancelAnimationFrame(frame);
+  }, [hud.opening, hud.finished, hud.roomIndex]);
   if (hud.opening !== "done")
     return hud.opening === "title" ? <Title onBegin={controls.begin} /> : null;
   return (
-    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5">
+    <div className="ui-shell pointer-events-none fixed inset-0 z-10">
       <h1 className="sr-only">PLEASE HOLD: a tiny zero-gravity workplace comedy</h1>
-      <div className="flex items-start justify-between gap-2">
-        <TaskCard hud={hud} />
-        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-start">
-          <button
-            className="guide-replay pointer-events-auto"
-            type="button"
-            aria-label="Replay the guide"
-            onClick={controls.replayGuide}
-          >
-            ?
-          </button>
-          <RestartButton hud={hud} onRestart={controls.restart} />
-          <MuteButton hud={hud} onToggle={controls.toggleMute} />
+      <div className="play-hud" inert={hud.finished}>
+        <div className="hud-top">
+          <TaskCard hud={hud} />
+          <div className="hud-utilities">
+            <button
+              className="guide-replay pointer-events-auto"
+              type="button"
+              aria-label="Replay the guide"
+              onClick={() => {
+                controls.replayGuide();
+                focusPlaySurface();
+              }}
+            >
+              ?
+            </button>
+            <RestartButton hud={hud} onRestart={controls.restart} />
+            <MuteButton hud={hud} onToggle={controls.toggleMute} />
+          </div>
+        </div>
+        <RoomBanner index={hud.roomIndex} name={hud.roomName} reduced={hud.reduced} />
+        <div className="hud-bottom">
+          <div className="hud-notes">
+            {hud.roomCard && !hud.guidePrompt && (
+              <RoomCard
+                key={`${hud.roomIndex}-${hud.roomCard.result.roomId}`}
+                card={hud.roomCard}
+                reduced={hud.reduced}
+              />
+            )}
+            {hud.guidePrompt && !hud.finished ? (
+              <Guide hud={hud} controls={controls} />
+            ) : (
+              !hud.roomCard && <HintBar hint={hud.finished ? null : hud.hint} />
+            )}
+          </div>
+          {!hud.finished && <ActionPad hud={hud} controls={controls} />}
         </div>
       </div>
-      <RoomBanner index={hud.roomIndex} name={hud.roomName} reduced={reduced} />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-1">
-          {hud.roomCard && (
-            <RoomCard
-              key={`${hud.roomIndex}-${hud.roomCard.result.roomId}`}
-              card={hud.roomCard}
-              reduced={reduced}
-            />
-          )}
-          {hud.guide >= 0 && !hud.finished ? (
-            <Guide hud={hud} controls={controls} />
-          ) : (
-            <HintBar hint={hud.finished ? null : hud.hint} />
-          )}
-        </div>
-        {!hud.finished && <ActionPad hud={hud} controls={controls} />}
-      </div>
-      {hud.result && <EndCard result={hud.result} onReplay={controls.replay} reduced={reduced} />}
+      {hud.result && (
+        <EndCard
+          result={hud.result}
+          onReplay={controls.replay}
+          reduced={hud.reduced}
+          sound={<MuteButton hud={hud} onToggle={controls.toggleMute} label />}
+        />
+      )}
     </div>
   );
 }

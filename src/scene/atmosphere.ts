@@ -94,7 +94,7 @@ export class Atmosphere {
       z: BACK_Z + 0.4 + ((i * 29) % 13) / 9,
       s: 0.5 + ((i * 17) % 7) / 7,
     }));
-    this.trailPts = [];
+    this.reset();
   }
 
   /** One soft shadow per body, fading as it drifts away from the wall it faces. */
@@ -127,7 +127,7 @@ export class Atmosphere {
       this.dustSeeds.forEach((d, i) => {
         const drift = t * 0.05 * d.s * motion;
         const x =
-          ((((d.x + drift + Math.sin(t * 0.2 + i) * 0.2 + hw) % room.width) + room.width) %
+          ((((d.x + drift + Math.sin(t * 0.2 * motion + i) * 0.2 + hw) % room.width) + room.width) %
             room.width) -
           hw;
         const y = ((((d.y + drift * 0.6 + hh) % room.height) + room.height) % room.height) - hh;
@@ -155,5 +155,12 @@ export class Atmosphere {
     });
     this.trail.count = this.trailPts.length;
     this.trail.instanceMatrix.needsUpdate = true;
+  }
+
+  reset() {
+    this.trailPts.length = 0;
+    this.trail.count = 0;
+    this.emitClock = 0;
+    for (const blob of this.blobs) blob.visible = false;
   }
 }

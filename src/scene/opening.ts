@@ -39,7 +39,7 @@ export class Opening {
       this.rotation.copy(camera.quaternion);
       this.fov = camera.fov;
     } else {
-      const t = ease(this.time / 2.8);
+      const t = reduced ? 1 : ease(this.time / 2.8);
       camera.position.lerp(this.eye, 1 - t);
       camera.position.y += Math.sin(Math.PI * t) * 0.5;
       camera.quaternion.slerp(this.rotation, 1 - t);

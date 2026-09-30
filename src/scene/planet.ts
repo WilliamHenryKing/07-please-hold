@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { tex } from "./assets";
+import { assetsForBuild, type SceneAssets, tex } from "./assets";
 
 /**
  * The view through every porthole: a star field and Earth, from NASA's Blue Marble (day),
@@ -12,8 +12,11 @@ export const skyUniforms = {
   uParallax: { value: new THREE.Vector2() },
 };
 
-let earth: { day: THREE.Texture; night: THREE.Texture; clouds: THREE.Texture } | null = null;
+type EarthTextures = { day: THREE.Texture; night: THREE.Texture; clouds: THREE.Texture };
+const skies = new WeakMap<SceneAssets, EarthTextures>();
 function earthTextures() {
+  const owner = assetsForBuild();
+  let earth = skies.get(owner);
   if (!earth) {
     earth = {
       day: tex("planet/earth_day_2k.webp", true),
@@ -24,6 +27,7 @@ function earthTextures() {
       t.wrapT = THREE.ClampToEdgeWrapping;
       t.anisotropy = 4;
     }
+    skies.set(owner, earth);
   }
   return earth;
 }

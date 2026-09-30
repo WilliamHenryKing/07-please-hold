@@ -8,6 +8,8 @@ import type { GameView } from "./scene/view";
  * and wait for the frame to settle before a screenshot.
  */
 export interface VisualTest {
+  quality(): Record<string, unknown>;
+  degrade(): boolean;
   ready: boolean;
   bookmarks: string[];
   renderer: string;
@@ -26,6 +28,9 @@ export function installVisualTest(deps: {
   const info = gl.getExtension("WEBGL_debug_renderer_info");
   const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown";
   const api: VisualTest = {
+    /** The governor's state, and one step down as a slow frame run would take. */
+    quality: () => view.stage.pipeline.state,
+    degrade: () => view.stage.pipeline.step(),
     ready: false,
     bookmarks: BOOKMARKS.map((b) => b.name),
     renderer,

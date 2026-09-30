@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { itemInReach, railInReach } from "../game/actions";
 import { preview } from "../game/predict";
-import type { GameEvent, GameState } from "../game/types";
+import { ROOMS } from "../game/rooms";
+import type { GameEvent, GameState, ItemKind } from "../game/types";
 import { closestOnSegment } from "../game/vec";
 import { ItemView } from "./actors";
 import { Atmosphere } from "./atmosphere";
@@ -51,15 +52,30 @@ export class GameView {
     this.stage.aoHidden.push(this.guides.group, this.effects.mesh, this.atmosphere.group);
   }
 
+  /**
+   * Every room's shell, fixtures and items, built once behind the arrival veil so their
+   * shaders compile before play, then kept (hidden) so three never frees those programs: a
+   * room change used to stall for up to half a second compiling its new materials. Their
+   * lights are left out, so the scene's light count (part of every lit program) is unchanged.
+   */
+  warmRooms() {
+    const warm = new THREE.Group();
+    for (const room of ROOMS) warm.add(buildShell(room).group, buildFixtures(room).group);
+    for (const kind of ["cushion", "plant", "tray", "flask"] as ItemKind[])
+      warm.add(new ItemView(kind).root);
+    const lights: THREE.Object3D[] = [];
+    warm.traverse((o) => {
+      if ((o as THREE.Light).isLight) lights.push(o);
+    });
+    for (const l of lights) l.removeFromParent();
+    return warm;
+  }
+
   private build(state: GameState) {
-    for (const child of [...this.roomGroup.children]) {
-      this.roomGroup.remove(child);
-      dispose(child);
-    }
-    for (const view of this.items.values()) {
-      this.roomGroup.remove(view.root);
-      dispose(view.root);
-    }
+    // The new room is built before the old one is disposed: three frees a shader program when
+    // the last material using it goes, so disposing first made every room change recompile
+    // (and stall on) the very programs the next room uses again.
+    const old = [...this.roomGroup.children];
     this.items.clear();
     this.shell = buildShell(state.room);
     this.roomGroup.add(this.shell.group);
@@ -70,6 +86,10 @@ export class GameView {
       const view = new ItemView(item.kind);
       this.items.set(item.id, view);
       this.roomGroup.add(view.root);
+    }
+    for (const child of old) {
+      this.roomGroup.remove(child);
+      dispose(child);
     }
     this.roomId = `${state.roomIndex}:${state.room.id}`;
     this.stage.frame(state.room);

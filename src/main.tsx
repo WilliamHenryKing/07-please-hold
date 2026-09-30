@@ -130,7 +130,7 @@ function frame(now: number) {
     // Once critical textures are in, compile every shader off the main thread (parallel
     // shader compile where supported) so the first visible frame does not hitch.
     void assetsReady
-      .then(() => view.stage.renderer.compileAsync(view.stage.scene, view.stage.camera))
+      .then(() => view.stage.precompile(view.warmRooms()))
       .catch(() => undefined)
       .then(() =>
         requestAnimationFrame(() =>

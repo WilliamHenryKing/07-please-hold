@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { RoomDef, Vec } from "../game/types";
 import { loadEnvironment } from "./assets";
 import { PAL } from "./palette";
-import { Pipeline, pickQuality, type Quality } from "./pipeline";
+import { modestGpu, Pipeline, pickQuality, type Quality } from "./pipeline";
 import { skyMaterial } from "./planet";
 
 const FOV = 30;
@@ -47,7 +47,7 @@ export class Stage {
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.background = new THREE.Color(PAL.space);
     // Image-based light from a real lounge; it is the only ambient term (no hemisphere fill).
     this.scene.environmentIntensity = 0.55;
@@ -80,11 +80,58 @@ export class Stage {
       this.camera,
       this.quality,
       () => this.aoHidden,
+      modestGpu(),
+    );
+    const query = new URLSearchParams(window.location.search);
+    this.pipeline.adaptive = !import.meta.env.DEV && !query.has("e2e") && !query.has("quality");
+    this.pipeline.onScale = () => {
+      if (this.room) this.frame(this.room);
+    };
+  }
+
+  /** Within a pixel budget per tier (a high-density screen need not draw every device pixel). */
+  private pixelRatio() {
+    const w = this.renderer.domElement.clientWidth || window.innerWidth;
+    const h = this.renderer.domElement.clientHeight || window.innerHeight;
+    const budget = Math.sqrt((this.quality === "high" ? 3.7e6 : 1.2e6) / Math.max(1, w * h));
+    return (
+      Math.min(window.devicePixelRatio || 1, this.quality === "high" ? 2 : 1.5, budget) *
+      (this.pipeline?.scale ?? 1)
     );
   }
 
-  private pixelRatio() {
-    return Math.min(window.devicePixelRatio, this.quality === "high" ? 2 : 1.5);
+  /** Nothing is drawn until the shaders are compiled (the arrival veil covers the canvas). */
+  private warmed = false;
+  private readonly born = performance.now();
+
+  /**
+   * Compile every shader in parallel (KHR_parallel_shader_compile) for the HDR target the
+   * scene pass draws into (three keys a program's tone mapping and output colour space on the
+   * bound target, so compiling against the screen built the wrong variants), then draw
+   * everything once with culling off so the driver finishes each program for the layouts and
+   * passes it will meet (ANGLE builds its D3D shaders at the first draw). Behind the veil.
+   * `later` holds what joins the scene in play (other rooms' things).
+   */
+  async precompile(later?: THREE.Object3D): Promise<void> {
+    if (later) this.scene.add(later);
+    const r = this.renderer;
+    const previous = r.getRenderTarget();
+    r.setRenderTarget(this.pipeline.composer.readBuffer);
+    const compiling = r.compileAsync(this.scene, this.camera);
+    r.setRenderTarget(previous);
+    await compiling;
+    const culled: THREE.Object3D[] = [];
+    this.scene.traverse((o) => {
+      if (o.frustumCulled) {
+        o.frustumCulled = false;
+        culled.push(o);
+      }
+    });
+    this.pipeline.composer.render();
+    for (const o of culled) o.frustumCulled = true;
+    // `later` (things other rooms use) stays in the scene, hidden, keeping its programs alive.
+    if (later) later.visible = false;
+    this.warmed = true;
   }
 
   /** Fit the key light's shadow frustum to the room, snapped to whole shadow-map texels. */
@@ -213,6 +260,8 @@ export class Stage {
   }
 
   render() {
-    this.pipeline.render();
+    // Until the shaders are compiled the veil hides the canvas (its safety reveal comes at 12 s,
+    // and from then on the scene is drawn regardless).
+    if (this.warmed || performance.now() - this.born > 11500) this.pipeline.render();
   }
 }

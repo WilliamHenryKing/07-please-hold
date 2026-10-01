@@ -1,81 +1,79 @@
-<div align="center">
+# PLEASE HOLD
 
-<img src="docs/readme/banner.svg" alt="PLEASE HOLD: a bellhop drifts past quilted walls and a porthole onto a slowly turning planet" width="100%">
+<p align="center"><img src="docs/readme/banner.svg" alt="PLEASE HOLD" width="100%"></p>
 
-<a href="https://07-please-hold.williamking.workers.dev"><img alt="Play it live" src="https://img.shields.io/badge/Play%20it%20live-8C3B3B?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
-<img alt="three.js" src="https://img.shields.io/badge/three.js%200.186-8C3B3B?style=for-the-badge&logo=threedotjs&logoColor=white">
-<img alt="React 19" src="https://img.shields.io/badge/React%2019-8C3B3B?style=for-the-badge&logo=react&logoColor=white">
-<img alt="TypeScript" src="https://img.shields.io/badge/TypeScript%20strict-8C3B3B?style=for-the-badge&logo=typescript&logoColor=white">
-<img alt="Vite 8" src="https://img.shields.io/badge/Vite%208-8C3B3B?style=for-the-badge&logo=vite&logoColor=white">
-<img alt="Bun" src="https://img.shields.io/badge/Bun%201.3-8C3B3B?style=for-the-badge&logo=bun&logoColor=white">
-<img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS%204-8C3B3B?style=for-the-badge&logo=tailwindcss&logoColor=white">
-<img alt="GSAP" src="https://img.shields.io/badge/GSAP%203-8C3B3B?style=for-the-badge&logo=greensock&logoColor=white">
+Tidy an orbital hotel while the telephone keeps you on hold. Throw the cushion one way and drift the other. Grab a rail, recover the prop and use the same momentum to put it where it belongs. Your cleaning supplies are also your propulsion.
 
-**You are the new attendant on a tiny orbital lounge: everything floats, you can only move by throwing things or pushing off rails, and the guests would like their tea.**
+**[Start the orbital shift →](https://07-please-hold.williamking.workers.dev)** · [Run locally](#run-locally) · [Credits](#credits)
 
-<img src="docs/readme/preview.gif" alt="The bellhop throws a cushion, recoils back to the handrail, catches the returning cushion and throws it onto the sofa" width="800">
+<p align="center"><img src="docs/readme/preview.gif" alt="The current Earth-porthole opening gliding into the first room and guide" width="800"></p>
 
-</div>
+## One useful rule: shared momentum
 
-## How to play
+Choose **Start the shift** or press Enter after the porthole camera tour. The first guide waits for a throw, a rail grab, cushion recovery and placement. Later help names the current task or hatch instead of repeating the first room's instructions.
 
-One rule moves everything: **momentum is shared.** Throw the cushion one way and you drift the other. Grab a rail and you stop dead. Carry something heavy and your push-offs get slower. The useful item is also your propulsion.
+Cream and coral dotted routes preview the thrown item and your recoil. A green ring marks what is in reach. Carrying a heavier item changes a push-off; grabbing a rail gives you somewhere to stop and plan.
 
-| Action | Keyboard and mouse | Touch |
+| Action | Keyboard / mouse | Touch |
 | --- | --- | --- |
-| Aim | Move the pointer, or arrows / WASD | Drag on the room |
-| Throw what you hold, push off the rail, or grab what is near | Click or Space | Release the drag, or the red button |
-| Grab the nearest rail or item | E or right-click | **Grab** |
-| Push off the rail while carrying the item | Q | **Push off carrying** |
-| Restart the room | R | **Restart** |
-| Mute or unmute | M | 🔊 |
+| Aim | Pointer, arrows or WASD | Drag on the room |
+| Throw, push off or contextual action | Click or Space | Release the drag or use the action button |
+| Grab a nearby rail or item | E or right-click | Grab |
+| Push off while carrying | Q | Push off carrying |
+| Restart the room | R | Restart |
+| Toggle sound | M | Sound |
 
-Dotted guides preview every move before you commit: cream for where the thrown item (or you) will go, coral for your recoil. A green ring marks whatever is in reach.
+## Three rooms, five tasks
 
-Tidy three rooms: return the cushion to the sofa, put the fern beneath its lamp, rescue a runaway breakfast tray, and carry a covered tea flask through a slowly revolving compartment. Then the call finally connects.
+Return a cushion, move a fern beneath its lamp, recover a drifting breakfast tray and deliver tea through the moving compartment. Complete the shift to reach the call and review card. Each room awards up to three stars against move and time targets; valid best scores stay in this browser.
 
-## What's inside
+The lounge uses quilted panels, brass rails, local lamp light, dust and a porthole Earth. On portrait screens the room turns to fit the available space. Short landscape layouts keep the primary actions reachable in a scrollable side panel. Reduced motion settles the opening and removes camera disturbance while preserving the same tasks.
 
-- **One honest physics rule.** Throws, push-offs, catches and bonks all conserve momentum, so every move is predictable and every mistake is funny.
-- **Three compact rooms, five tasks, one finale.** Each room is scored 1–3 stars on moves and time against par. Your bests stay in this browser. After room 3 the hold music fades, the line rings, and your shift is reviewed.
-- **Warm orbital domesticity.** Tufted leather panels with stitched seams that dent when you bounce off them, brushed-brass rails that reflect the room, real lamp light, drifting dust, and portholes onto NASA's Earth with an atmosphere rim.
-- **A camera that never makes you seasick.** It is fixed and gently tilted. On a portrait phone the room turns a quarter to fill the screen, because in orbit there is no "up".
-- **Feel.** The attendant squashes along the hit, thrown things tumble, there is a faint drift trail, and hard bumps give a tiny camera nudge. All of it is toned down under `prefers-reduced-motion`.
-- **Sound design.** CC0 elevator music on hold, padded thumps, brass clinks, a pizzicato jingle per task, station hum, a synthesised phone ring, and a mute that remembers.
-- **Mouse, touch and keyboard.** Labelled controls, visible focus, a four-action first lesson and contextual help for the room and item you are working on.
+## Engineering and verification
 
-## Screenshots
+The 120 Hz simulation shares stepping code with trajectory prediction. Prop mass, carried items, collisions and anchored bodies are accounted for together. Rooms are prepared ahead of use to avoid a shader compilation stall at a doorway. Input, animations, loaded resources and audio have explicit lifetimes through restart and failure recovery.
 
-<table>
-  <tr>
-    <td width="72%"><img src="docs/readme/desktop.png" alt="Desktop: the conservatory, with the fern, the breakfast tray and the biscuit cloud" width="100%"></td>
-    <td width="28%"><img src="docs/readme/phone.png" alt="Phone: the galley ring turned to fill a portrait screen" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center">Desktop, 1440 × 900</td>
-    <td align="center">Phone, 390 × 844</td>
-  </tr>
-</table>
+Application revision `2942adf` passed **84 tests / 1,050 assertions** and nine RTX 2060 scenarios. An independent route completes every task across all three rooms with three stars; browser coverage also checks touch cancellation, contextual help, ending/replay, native focus and recovery. See the [bug-pass report](docs/visual/BUG-PASS-2026-09-30.md).
 
-## Built with
+[src/game/](src/game/) holds physics and tasks; [src/scene/](src/scene/) the rooms and camera; [src/ui/](src/ui/) the task and ending controls; [src/audio/](src/audio/) the hold music and sound engine.
 
-Three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite 8, Tailwind CSS 4, GSAP, Biome and Bun. Geometry is modelled in code; surfaces use sourced CC0 scans (tufted leather, brushed brass, bouclé, linen), and the planet is NASA imagery.
+## Current screenshots
 
-Notable techniques:
+| Desktop | Phone |
+| --- | --- |
+| <img src="docs/readme/desktop.jpg" alt="PLEASE HOLD: current desktop opening" width="600"> | <img src="docs/readme/phone.jpg" alt="PLEASE HOLD: current phone interface" width="240"> |
 
-- **One lighting model.** An HDR half-float pipeline (GTAO, bloom above an HDR threshold, AgX applied once in OutputPass, SMAA). A real lounge HDRI is the only ambient light, every glowing lamp is a real light, and a lighter tier keeps phones smooth.
-- **Shared-momentum movement on a fixed 120 Hz step.** `src/game/` is pure TypeScript with no DOM: impulses, restitution, a revolving bar with surface velocity, and trajectory previews. It is covered by unit tests.
-- **The portrait camera.** Framing solves for the room's long side against the HUD's safe band, turning the view a quarter on tall screens. Keyboard aiming is remapped so "up" is always screen-up.
-- **An event-driven presentation layer.** The simulation emits events (throw, grab, bump, place), and the renderer, the audio mixer and the HUD each react to them independently. That keeps effects, sound and the React HUD out of the rules.
+<img src="docs/readme/detail.jpg" alt="PLEASE HOLD: the experience after the opening" width="800">
 
-## Run it locally
+The opening loop and three main screenshots were captured from the live site on **1 October 2026**, using Chrome on this workstation; the phone image is a 390 × 844 browser viewport. The animated preview is a short loop, not a full playthrough. [Capture details](docs/readme/capture.json).
+
+## Run locally
+
+Use **Bun 1.3.10** (the version pinned in `package.json`) and Node.js 22.12 or newer. From this repository:
 
 ```sh
-bun install
+bun install --frozen-lockfile
 bun run dev      # http://127.0.0.1:4517/
-bun run check    # strict tsc, Biome, bun test, production build into dist/
-bun run e2e      # Playwright: all three rooms, ending/replay, touch, input and loading recovery
+bun run check    # strict types, Biome, unit tests and production build
+bun run preview  # http://127.0.0.1:4617/ after the build
 ```
+
+Development and preview are separate long-running commands; run one at a time or use separate terminals. `bun run build` writes the static production output to `dist/`. Dependencies and the lockfile are local to this project.
+
+### Browser suite
+
+Install the test browser once, then run the checked-in Playwright suite. Its configuration builds and starts the production preview. Browser scenarios are separate from `bun run check`.
+
+```sh
+bunx playwright install chromium
+bun run e2e
+```
+
+The recorded real-GPU release checks used installed Chrome on an RTX 2060; the default Chromium configuration is not a claim of physical-phone coverage.
+
+## Stack and release
+
+Direct Three.js 0.186 · React 19.3 · strict TypeScript · Vite 8.3 · GSAP 3.15 · Tailwind CSS 4.3 · Bun 1.3.10 · Biome. The public website is served by Cloudflare Workers. This README describes [application revision 2942adf](https://github.com/WilliamHenryKing/07-please-hold/commit/2942adf2b0e0bc3be61543698050bee28ac68ed9); the documentation refresh changes no application behaviour.
 
 ## Credits
 
@@ -112,4 +110,4 @@ The Kenney pack licence files state "Creative Commons Zero, CC0". The OpenGameAr
 
 ---
 
-<p align="center">Part of William King's portfolio collection</p>
+Part of [William King's portfolio collection](https://github.com/WilliamHenryKing).
